@@ -32,7 +32,10 @@ const ProductsPage = () => {
     const load = async () => {
       try {
         const res = await getProducts();
-        setProducts(res.data?.products || res.data || []);
+        const list = Array.isArray(res.data?.products)
+          ? res.data.products
+          : (Array.isArray(res.data) ? res.data : mockProducts);
+        setProducts(list.length > 0 ? list : mockProducts);
       } catch {
         setProducts(mockProducts);
       } finally {

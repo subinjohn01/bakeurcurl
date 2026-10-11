@@ -174,7 +174,12 @@ const BookingPage = () => {
   const steps = ['Select Service', 'Date & Stylist', 'Your Details', 'Payment'];
 
   useEffect(() => {
-    getServices().then(r => setServices(r.data?.services || r.data || [])).catch(() => setServices(mockServices));
+    getServices().then(r => {
+      const list = Array.isArray(r.data?.services)
+        ? r.data.services
+        : (Array.isArray(r.data) ? r.data : mockServices);
+      setServices(list.length > 0 ? list : mockServices);
+    }).catch(() => setServices(mockServices));
   }, []);
 
   useEffect(() => {

@@ -26,7 +26,9 @@ const ServicesPage = () => {
     const load = async () => {
       try {
         const res = await getServices();
-        const list = res.data?.services || res.data || [];
+        const list = Array.isArray(res.data?.services) 
+          ? res.data.services 
+          : (Array.isArray(res.data) ? res.data : mockServices);
         setServices(list.length > 0 ? list : mockServices);
       } catch {
         setServices(mockServices);
