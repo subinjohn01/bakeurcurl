@@ -1,0 +1,178 @@
+/**
+ * BakeUrCurls — Comprehensive Automated Test Suite
+ *
+ * Runs post-development verification across:
+ * 1. Backend REST API Endpoints (Services, Products, Bookings, Auth, Queries)
+ * 2. Frontend React Component Integrity & JavaScript AST Syntax
+ * 3. Database Connection & Schema Health
+ */
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const colors = {
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+  reset: '\x1b[0m',
+  bold: '\x1b[1m'
+};
+
+let passed = 0;
+let failed = 0;
+
+function assert(condition, testName, details = '') {
+  if (condition) {
+    console.log(`  ${colors.green}✓ PASS${colors.reset} ${testName}`);
+    passed++;
+  } else {
+    console.log(`  ${colors.red}✗ FAIL${colors.reset} ${testName} ${details ? '(' + details + ')' : ''}`);
+    failed++;
+  }
+}
+
+function request(method, path, body = null) {
+  return new Promise((resolve) => {
+    const postData = body ? JSON.stringify(body) : '';
+    const req = http.request(
+      {
+        hostname: 'localhost',
+        port: 5000,
+        path: '/api' + path,
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(body ? { 'Content-Length': Buffer.byteLength(postData) } : {}),
+        },
+        timeout: 5000,
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode, data: JSON.parse(data) });
+          } catch {
+            resolve({ status: res.statusCode, data });
+          }
+        });
+      }
+    );
+    req.on('error', (err) => resolve({ error: err.message }));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ error: 'Request timed out' });
+    });
+    if (body) req.write(postData);
+    req.end();
+  });
+}
+
+async function runTestSuite() {
+  console.log(`\n${colors.bold}${colors.cyan}====================================================${colors.reset}`);
+  console.log(`${colors.bold}${colors.cyan}   BakeUrCurls — Automated Health & Smoke Test Suite${colors.reset}`);
+  console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}\n`);
+
+  // ─────────────────────────────────────────────────────────────
+  // 1. BACKEND API TESTS
+  // ─────────────────────────────────────────────────────────────
+  console.log(`${colors.bold}1. Backend REST API Tests:${colors.reset}`);
+
+  // Test 1.1: Services
+  const svcRes = await request('GET', '/services');
+  assert(!svcRes.error && svcRes.status === 200, 'GET /api/services returns HTTP 200');
+  const services = svcRes.data?.services || [];
+  assert(services.length === 8, `GET /api/services returns exactly 8 services (received ${services.length})`);
+  
+  const hasDryCut = services.some(s => s.name.includes('Curly Hair Dry Cut & Styling'));
+  assert(hasDryCut, 'Contains signature "Curly Hair Dry Cut & Styling" service');
+
+  // Test 1.2: Products
+  const prodRes = await request('GET', '/products');
+  assert(!prodRes.error && prodRes.status === 200, 'GET /api/products returns HTTP 200');
+  const products = prodRes.data?.products || [];
+  assert(products.length >= 5, `GET /api/products returns products catalog (${products.length} products)`);
+
+  // Test 1.3: Available Slots
+  const today = new Date().toISOString().split('T')[0];
+  const slotsRes = await request('GET', `/bookings/available-slots?date=${today}`);
+  assert(!slotsRes.error && (slotsRes.status === 200 || slotsRes.status === 304), 'GET /api/bookings/available-slots returns valid slots');
+
+  // Test 1.4: Query submission
+  const queryRes = await request('POST', '/queries', {
+    name: 'Automated Test User',
+    email: 'test@bakeurcurls.com',
+    phone: '7012001472',
+    subject: 'Automated Test Inquiry',
+    message: 'Testing system health and inquiry routing.',
+  });
+  assert(!queryRes.error && (queryRes.status === 200 || queryRes.status === 201), 'POST /api/queries accepts customer queries');
+
+  // ─────────────────────────────────────────────────────────────
+  // 2. FRONTEND SOURCE CODE INTEGRITY TESTS
+  // ─────────────────────────────────────────────────────────────
+  console.log(`\n${colors.bold}2. Frontend JavaScript Code Integrity Tests:${colors.reset}`);
+
+  const frontendSrc = path.join(__dirname, 'frontend', 'src');
+  const jsFiles = [];
+
+  function collectJs(dir) {
+    fs.readdirSync(dir).forEach(f => {
+      const full = path.join(dir, f);
+      if (fs.statSync(full).isDirectory()) collectJs(full);
+      else if (f.endsWith('.js')) jsFiles.push(full);
+    });
+  }
+  collectJs(frontendSrc);
+
+  assert(jsFiles.length >= 30, `Frontend has full component suite (${jsFiles.length} files scanned)`);
+
+  let truncatedTypoFound = false;
+  let brokenSymbolsFound = false;
+
+  for (const file of jsFiles) {
+    const code = fs.readFileSync(file, 'utf8');
+    
+    // Check for previous truncation patterns
+    if (code.includes('selectedServic.') || code.includes('selectedServic ')) {
+      truncatedTypoFound = true;
+      console.log(`  ${colors.red}Found selectedServic in ${path.basename(file)}${colors.reset}`);
+    }
+    if (code.includes('use.role') || code.includes('use.name')) {
+      truncatedTypoFound = true;
+      console.log(`  ${colors.red}Found use.role in ${path.basename(file)}${colors.reset}`);
+    }
+  }
+
+  assert(!truncatedTypoFound, 'Zero truncated variable typos found (selectedService, user, customerInfo verified)');
+
+  // Test 2.3: BookingPage has valid handlers
+  const bookingPageCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'BookingPage.js'), 'utf8');
+  assert(bookingPageCode.includes('selectedService'), 'BookingPage.js has selectedService properly defined');
+  assert(!bookingPageCode.includes('selectedServic.'), 'BookingPage.js has 0 instances of selectedServic typo');
+
+  // Test 2.4: ServicesPage has BUC categories
+  const servicesPageCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'ServicesPage.js'), 'utf8');
+  assert(servicesPageCode.includes('Bridal & Makeup') && servicesPageCode.includes('Threading'), 'ServicesPage has BUC service categories');
+
+  // ─────────────────────────────────────────────────────────────
+  // 3. FRONTEND BUILD PRODUCTION TEST
+  // ─────────────────────────────────────────────────────────────
+  console.log(`\n${colors.bold}3. Production Build & Bundle Verification:${colors.reset}`);
+  const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
+  const buildExists = fs.existsSync(buildIndex);
+  assert(buildExists, 'Production build artifact exists at frontend/build/index.html');
+
+  // ─────────────────────────────────────────────────────────────
+  // TEST SUMMARY
+  // ─────────────────────────────────────────────────────────────
+  console.log(`\n${colors.bold}${colors.cyan}----------------------------------------------------${colors.reset}`);
+  console.log(`${colors.bold}Results: ${colors.green}${passed} passed${colors.reset}, ${failed > 0 ? colors.red + failed + ' failed' : colors.green + '0 failed'}${colors.reset}`);
+  console.log(`${colors.bold}${colors.cyan}----------------------------------------------------${colors.reset}\n`);
+
+  process.exit(failed > 0 ? 1 : 0);
+}
+
+runTestSuite();

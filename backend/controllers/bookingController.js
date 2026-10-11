@@ -339,30 +339,36 @@ const getAvailableSlots = async (req, res, next) => {
   try {
     const { staffId, date } = req.query;
 
-    if (!staffId || !date) {
+    if (!date) {
       return res.status(400).json({
         success: false,
-        message: 'staffId and date query parameters are required.',
+        message: 'date query parameter is required.',
       });
     }
 
-    // Validate staff exists
-    const staff = await User.findOne({ _id: staffId, role: 'staff', isActive: true });
-    if (!staff) {
-      return res.status(404).json({ success: false, message: 'Staff member not found.' });
+    let staff = null;
+    if (staffId) {
+      staff = await User.findOne({ _id: staffId, role: 'staff', isActive: true });
+      if (!staff) {
+        return res.status(404).json({ success: false, message: 'Staff member not found.' });
+      }
     }
 
-    // Get booked slots for this staff + date
+    // Get booked slots for this date
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
     const nextDay = new Date(d);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    const bookedSlots = await Booking.find({
-      staff: staffId,
+    const filter = {
       date: { $gte: d, $lt: nextDay },
       status: { $in: ['pending', 'confirmed'] },
-    }).select('timeSlot');
+    };
+    if (staffId) {
+      filter.staff = staffId;
+    }
+
+    const bookedSlots = await Booking.find(filter).select('timeSlot');
 
     const bookedSlotSet = new Set(bookedSlots.map((b) => b.timeSlot));
 
@@ -388,7 +394,7 @@ const getAvailableSlots = async (req, res, next) => {
     res.status(200).json({
       success: true,
       date: d.toISOString().split('T')[0],
-      staff: { id: staff._id, name: staff.name },
+      staff: staff ? { id: staff._id, name: staff.name } : null,
       availableSlots,
       bookedSlots: Array.from(bookedSlotSet),
     });
