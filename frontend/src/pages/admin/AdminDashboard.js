@@ -59,8 +59,25 @@ const navItems = [
 export function AdminSidebarNav({ active }) {
   return (
     <div style={S.sidebar}>
-      <div style={S.sidebarLogo}>🌀 BakeUrCurls</div>
-      <div style={S.sidebarSub}>Admin Panel</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '2rem' }}>
+        <img
+          src="/buc-logo.png"
+          alt="BakeUrCurls"
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '1.5px solid #D4AF37',
+            boxShadow: '0 0 10px rgba(212,175,55,0.4)',
+            display: 'block',
+          }}
+        />
+        <div>
+          <div style={S.sidebarLogo}>BakeUrCurls</div>
+          <div style={S.sidebarSub}>Admin Panel</div>
+        </div>
+      </div>
       {navItems.map((n) => (
         <Link key={n.to} to={n.to} style={S.navLink(active === n.to)}>
           {n.label}
