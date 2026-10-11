@@ -108,6 +108,45 @@ async function runTestSuite() {
   });
   assert(!queryRes.error && (queryRes.status === 200 || queryRes.status === 201), 'POST /api/queries accepts customer queries');
 
+  // Test 1.5: Mail OTP Password Reset Flow
+  const otpRes = await request('POST', '/auth/forgot-password-otp', { email: 'admin@bakeurcurl.com' });
+  assert(!otpRes.error && otpRes.status === 200, 'POST /api/auth/forgot-password-otp generates & sends OTP');
+  const otp = otpRes.data?.devOtp;
+  assert(!!otp && otp.length === 6, 'OTP generated is a 6-digit numeric verification code');
+
+  // Negative test: invalid OTP
+  const badOtpRes = await request('POST', '/auth/reset-password-otp', {
+    email: 'admin@bakeurcurl.com',
+    otp: '000000',
+    newPassword: 'TempPassword123'
+  });
+  assert(badOtpRes.status === 400, 'POST /api/auth/reset-password-otp rejects invalid/expired OTP');
+
+  // Positive test: valid OTP reset
+  const goodOtpRes = await request('POST', '/auth/reset-password-otp', {
+    email: 'admin@bakeurcurl.com',
+    otp: otp,
+    newPassword: 'TempAdminPass123'
+  });
+  assert(goodOtpRes.status === 200, 'POST /api/auth/reset-password-otp successfully resets password with valid OTP');
+
+  // Verify login with new password
+  const newLoginRes = await request('POST', '/auth/login', {
+    email: 'admin@bakeurcurl.com',
+    password: 'TempAdminPass123'
+  });
+  assert(newLoginRes.status === 200, 'Login succeeds with the newly reset OTP password');
+
+  // Restore password back to Admin@123
+  const restoreOtpRes = await request('POST', '/auth/forgot-password-otp', { email: 'admin@bakeurcurl.com' });
+  if (restoreOtpRes.data?.devOtp) {
+    await request('POST', '/auth/reset-password-otp', {
+      email: 'admin@bakeurcurl.com',
+      otp: restoreOtpRes.data.devOtp,
+      newPassword: 'Admin@123'
+    });
+  }
+
   // 2. FRONTEND SOURCE CODE INTEGRITY TESTS
   console.log(`\n${colors.bold}2. Frontend JavaScript Code Integrity Tests:${colors.reset}`);
 

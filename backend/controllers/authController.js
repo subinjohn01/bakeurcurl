@@ -201,4 +201,106 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, changePassword };
+// ─── forgotPasswordOtp ─────────────────────────────────────────────────────────
+/**
+ * @desc    Generate and send 6-digit OTP to user/admin email
+ * @route   POST /api/auth/forgot-password-otp
+ * @access  Public
+ */
+const forgotPasswordOtp = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ success: false, errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account registered with this email address.',
+      });
+    }
+
+    // Generate 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expireTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpire = expireTime;
+    await user.save({ validateBeforeSave: false });
+
+    // Send email via emailService
+    const { sendOtpEmail } = require('../utils/emailService');
+    const emailSent = await sendOtpEmail(user.email, user.name, otp);
+
+    const responsePayload = {
+      success: true,
+      message: `A 6-digit verification code has been sent to ${email}.`,
+    };
+
+    // If in development or SMTP is not fully setup, expose devOtp for frictionless testing
+    if (process.env.NODE_ENV !== 'production' || !emailSent) {
+      responsePayload.devOtp = otp;
+    }
+
+    res.status(200).json(responsePayload);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── resetPasswordOtp ──────────────────────────────────────────────────────────
+/**
+ * @desc    Verify OTP and update password for user or admin
+ * @route   POST /api/auth/reset-password-otp
+ * @access  Public
+ */
+const resetPasswordOtp = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ success: false, errors: errors.array() });
+    }
+
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      resetPasswordOtp: otp.toString().trim(),
+      resetPasswordOtpExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP. Please request a new code.',
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordOtpExpire = undefined;
+    await user.save(); // Pre-save hook hashes password
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful! You can now log in with your new password.',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  changePassword,
+  forgotPasswordOtp,
+  resetPasswordOtp,
+};

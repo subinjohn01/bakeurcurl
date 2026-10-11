@@ -102,14 +102,46 @@ const styles = {
     fontWeight: '600',
   },
   staffNote: {
-    background: 'rgba(168₹22,81,0.1)',
-    border: '1px solid rgba(168₹22,81,0.3)',
+    background: 'rgba(168,122,81,0.1)',
+    border: '1px solid rgba(168,122,81,0.3)',
     borderRadius: '8px',
     padding: '0.75rem 1rem',
     marginBottom: '1.5rem',
     color: 'rgba(251,246,238,0.7)',
     fontSize: '0.8rem',
     textAlign: 'center',
+  },
+  forgotLink: {
+    display: 'inline-block',
+    color: '#F1D592',
+    fontSize: '0.82rem',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    marginTop: '0.4rem',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0, 0, 0, 0.85)',
+    backdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '1rem',
+  },
+  modalCard: {
+    background: '#231812',
+    border: '1px solid rgba(241,213,146,0.3)',
+    borderRadius: '16px',
+    padding: '2.5rem',
+    maxWidth: '440px',
+    width: '100%',
+    boxShadow: '0 25px 50px rgba(0,0,0,0.8)',
+    position: 'relative',
   },
 };
 
@@ -119,6 +151,15 @@ export default function LoginPage() {
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+
+  // Forgot Password / OTP State
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [otpStep, setOtpStep] = useState(1); // 1 = enter email, 2 = enter otp + new pass
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const from = location.state?.from?.pathname || null;
 
@@ -130,7 +171,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      toast.success(`Welcome back, ₹{user.name}!`);
+      toast.success(`Welcome back, ${user.name}!`);
       if (from) return navigate(from, { replace: true });
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'staff') navigate('/staff');
@@ -139,6 +180,61 @@ export default function LoginPage() {
       toast.error(err.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Step 1: Request OTP
+  const handleRequestOtp = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) return toast.error('Please enter your registered email address');
+    setOtpLoading(true);
+    try {
+      const res = await (await import('../api/axios')).default.post('/auth/forgot-password-otp', {
+        email: resetEmail.trim(),
+      });
+      toast.success(res.data.message || 'OTP sent to your email!');
+      if (res.data.devOtp) {
+        toast(`Dev OTP: ${res.data.devOtp}`, { icon: '🔑', duration: 8000 });
+      }
+      setOtpStep(2);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send OTP. Please check the email.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP and Reset Password
+  const handleVerifyOtpAndReset = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) {
+      return toast.error('Please enter the 6-digit OTP code');
+    }
+    if (!newPassword || newPassword.length < 8) {
+      return toast.error('New password must be at least 8 characters');
+    }
+    if (newPassword !== confirmPassword) {
+      return toast.error('Passwords do not match');
+    }
+
+    setOtpLoading(true);
+    try {
+      const res = await (await import('../api/axios')).default.post('/auth/reset-password-otp', {
+        email: resetEmail.trim(),
+        otp: otpCode.trim(),
+        newPassword,
+      });
+      toast.success(res.data.message || 'Password reset successful!');
+      setShowForgotModal(false);
+      setOtpStep(1);
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setForm(prev => ({ ...prev, email: resetEmail, password: '' }));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reset password. Check OTP.');
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -169,12 +265,25 @@ export default function LoginPage() {
               />
             </div>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Password</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={styles.label}>Password</label>
+                <button
+                  type="button"
+                  style={styles.forgotLink}
+                  onClick={() => {
+                    setResetEmail(form.email || '');
+                    setOtpStep(1);
+                    setShowForgotModal(true);
+                  }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <input
                 style={styles.input}
                 type="password"
                 name="password"
-                placeholder="AAAAAAAA"
+                placeholder="••••••••"
                 value={form.password}
                 onChange={handleChange}
                 autoComplete="current-password"
@@ -189,7 +298,7 @@ export default function LoginPage() {
             </button>
           </form>
           <div style={styles.footer}>
-            Don't have an account₹{' '}
+            Don't have an account?{' '}
             <Link to="/register" style={styles.link}>Create one</Link>
             <br /><br />
             <Link to="/" style={{ ...styles.link, color: 'rgba(251,246,238,0.4)' }}>
@@ -198,6 +307,117 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password OTP Modal */}
+      {showForgotModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowForgotModal(false)}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: '700', color: '#F1D592', margin: 0 }}>
+                🔑 Reset Password via Mail OTP
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                style={{ background: 'none', border: 'none', color: 'rgba(251,246,238,0.5)', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ color: 'rgba(251,246,238,0.7)', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              {otpStep === 1
+                ? 'Enter your registered user or admin email address to receive a 6-digit one-time verification code.'
+                : `Enter the 6-digit verification code sent to ${resetEmail} and choose a new password.`}
+            </p>
+
+            {otpStep === 1 ? (
+              <form onSubmit={handleRequestOtp}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Registered Email Address</label>
+                  <input
+                    style={styles.input}
+                    type="email"
+                    placeholder="user@example.com or admin@bakeurcurl.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  style={{ ...styles.btn, opacity: otpLoading ? 0.7 : 1 }}
+                  disabled={otpLoading}
+                >
+                  {otpLoading ? 'Sending OTP...' : 'Send OTP to Email'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtpAndReset}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>6-Digit OTP Code</label>
+                  <input
+                    style={{ ...styles.input, letterSpacing: '4px', fontSize: '1.2rem', textAlign: 'center', fontWeight: '700', color: '#F1D592' }}
+                    type="text"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>New Password</label>
+                  <input
+                    style={styles.input}
+                    type="password"
+                    placeholder="Min 8 chars (Uppercase, lowercase, number)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Confirm New Password</label>
+                  <input
+                    style={styles.input}
+                    type="password"
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setOtpStep(1)}
+                    style={{
+                      flex: 1,
+                      padding: '0.875rem',
+                      background: 'rgba(251,246,238,0.08)',
+                      border: '1px solid rgba(251,246,238,0.15)',
+                      borderRadius: '8px',
+                      color: '#FBF6EE',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ ...styles.btn, flex: 2, marginTop: 0, opacity: otpLoading ? 0.7 : 1 }}
+                    disabled={otpLoading}
+                  >
+                    {otpLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

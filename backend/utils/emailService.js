@@ -289,9 +289,48 @@ const sendAppointmentReminder = async (toEmail, toName, booking) => {
   });
 };
 
+// ─── sendOtpEmail ─────────────────────────────────────────────────────────────
+/**
+ * Send a 6-digit OTP email for password reset.
+ * @param {string} toEmail
+ * @param {string} toName
+ * @param {string} otp
+ */
+const sendOtpEmail = async (toEmail, toName, otp) => {
+  try {
+    const transporter = createTransporter();
+
+    const bodyHtml = `
+      <h2>Password Reset Request</h2>
+      <p>Hi <strong>${toName || 'User'}</strong>,</p>
+      <p>We received a request to reset your password for your BakeUrCurls account.</p>
+      <p>Please use the verification code (OTP) below to complete your password reset:</p>
+      <div style="background: linear-gradient(135deg, #231812, #3b2518); border: 2px solid #F1D592; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+        <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #F1D592; font-family: monospace;">${otp}</span>
+      </div>
+      <p style="color: #666; font-size: 13px;">⚠️ This OTP is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
+      <p>If you did not request a password reset, you can safely ignore this email. Your current password will remain unchanged.</p>
+      <p>Warm regards,<br /><strong>The BakeUrCurls Security Team</strong></p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'BakeUrCurls Salon <noreply@BakeUrCurls.com>',
+      to: `${toName || 'User'} <${toEmail}>`,
+      subject: `🔑 Your BakeUrCurls Password Reset OTP: ${otp}`,
+      html: baseTemplate('Password Reset OTP — BakeUrCurls', bodyHtml),
+    });
+    console.log(`[EmailService] OTP sent to ${toEmail}: ${otp}`);
+    return true;
+  } catch (error) {
+    console.warn(`[EmailService] Failed to send email via SMTP (${error.message}). Dev OTP for ${toEmail}: ${otp}`);
+    return false;
+  }
+};
+
 module.exports = {
   sendBookingConfirmation,
   sendBookingCancellation,
   sendQueryReply,
   sendAppointmentReminder,
+  sendOtpEmail,
 };

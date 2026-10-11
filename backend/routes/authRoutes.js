@@ -10,7 +10,15 @@
 
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getMe, updateProfile, changePassword } = require('../controllers/authController');
+const {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  changePassword,
+  forgotPasswordOtp,
+  resetPasswordOtp,
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -41,6 +49,20 @@ const changePasswordValidation = [
     .withMessage('Password must contain uppercase, lowercase, and a number.'),
 ];
 
+const forgotPasswordOtpValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required.'),
+];
+
+const resetPasswordOtpValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required.'),
+  body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('6-digit OTP code is required.'),
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('New password must be at least 8 characters.')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain uppercase, lowercase, and a number.'),
+];
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 router.post('/register', registerValidation, register);
@@ -48,5 +70,9 @@ router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePasswordValidation, changePassword);
+
+// OTP Password Reset for Users and Admins
+router.post('/forgot-password-otp', forgotPasswordOtpValidation, forgotPasswordOtp);
+router.post('/reset-password-otp', resetPasswordOtpValidation, resetPasswordOtp);
 
 module.exports = router;

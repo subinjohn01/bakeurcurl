@@ -73,6 +73,8 @@ const userSchema = new mongoose.Schema(
     // Password reset fields
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    resetPasswordOtp: String,
+    resetPasswordOtpExpire: Date,
   },
   {
     timestamps: true, // Adds createdAt and updatedAt automatically

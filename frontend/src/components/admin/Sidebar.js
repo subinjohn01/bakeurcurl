@@ -168,7 +168,7 @@ const Sidebar = () => {
               flexShrink: 0,
             }}
           >
-            {user?.nam.charAt(0.toUpperCase() || 'A'}
+            {user?.name?.charAt(0)?.toUpperCase() || 'A'}
           </div>
           <div style={{ overflow: 'hidden' }}>
             <p style={{ color: '#fff', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
