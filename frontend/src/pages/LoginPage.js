@@ -185,11 +185,27 @@ export default function LoginPage() {
     }
   };
 
+  const isStaticHost =
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    !process.env.REACT_APP_API_URL;
+
   // Step 1: Request OTP
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     if (!resetEmail) return toast.error('Please enter your registered email address');
     setOtpLoading(true);
+
+    if (isStaticHost) {
+      const mockOtp = '123456';
+      toast.success(`OTP generated: ${mockOtp} (Demo Mode)`);
+      toast(`Verification Code: ${mockOtp}`, { icon: '🔑', duration: 8000 });
+      setOtpStep(2);
+      setOtpLoading(false);
+      return;
+    }
+
     try {
       const res = await (await import('../api/axios')).default.post('/auth/forgot-password-otp', {
         email: resetEmail.trim(),
@@ -200,14 +216,7 @@ export default function LoginPage() {
       }
       setOtpStep(2);
     } catch (err) {
-      if (err.isStaticFallback) {
-        const mockOtp = '123456';
-        toast.success(`OTP generated: ${mockOtp} (Demo Mode)`);
-        toast(`Verification Code: ${mockOtp}`, { icon: '🔑', duration: 8000 });
-        setOtpStep(2);
-      } else {
-        toast.error(err.response?.data?.message || err.message || 'Failed to send OTP. Please check the email.');
-      }
+      toast.error(err.response?.data?.message || err.message || 'Failed to send OTP. Please check the email.');
     } finally {
       setOtpLoading(false);
     }
@@ -227,6 +236,19 @@ export default function LoginPage() {
     }
 
     setOtpLoading(true);
+
+    if (isStaticHost) {
+      toast.success('Password updated successfully! You can now log in.');
+      setShowForgotModal(false);
+      setOtpStep(1);
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setForm(prev => ({ ...prev, email: resetEmail, password: newPassword }));
+      setOtpLoading(false);
+      return;
+    }
+
     try {
       const res = await (await import('../api/axios')).default.post('/auth/reset-password-otp', {
         email: resetEmail.trim(),
@@ -241,17 +263,7 @@ export default function LoginPage() {
       setConfirmPassword('');
       setForm(prev => ({ ...prev, email: resetEmail, password: '' }));
     } catch (err) {
-      if (err.isStaticFallback) {
-        toast.success('Password updated successfully! You can now log in.');
-        setShowForgotModal(false);
-        setOtpStep(1);
-        setOtpCode('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setForm(prev => ({ ...prev, email: resetEmail, password: newPassword }));
-      } else {
-        toast.error(err.response?.data?.message || err.message || 'Failed to reset password. Check OTP.');
-      }
+      toast.error(err.response?.data?.message || err.message || 'Failed to reset password. Check OTP.');
     } finally {
       setOtpLoading(false);
     }

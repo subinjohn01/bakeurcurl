@@ -21,20 +21,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const isStaticHost =
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    !process.env.REACT_APP_API_URL;
+
   const login = useCallback(async (email, password) => {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      if (response.data && response.data.user && response.data.token) {
-        const { token, user: userData } = response.data;
-        localStorage.setItem('BakeUrCurl_token', token);
-        localStorage.setItem('BakeUrCurl_user', JSON.stringify(userData));
-        setUser(userData);
-        return userData;
-      }
-      throw new Error('Unexpected server response');
-    } catch (err) {
-      const normalizedEmail = (email || '').toLowerCase().trim();
-      // Built-in Admin & Staff credentials support for cloud/static deployments
+    const normalizedEmail = (email || '').toLowerCase().trim();
+
+    // On static deployments (e.g. Vercel static SPA without live API server)
+    if (isStaticHost) {
       if (
         (normalizedEmail === 'admin@bakeurcurl.com' || normalizedEmail === 'admin@curlco.com') &&
         (password === 'Admin@123' || password === 'Admin@123Updated')
@@ -71,44 +68,48 @@ export const AuthProvider = ({ children }) => {
         return staffUser;
       }
 
-      if (err.isStaticFallback) {
-        throw new Error('Invalid email or password.');
-      }
-      throw err;
+      throw new Error('Invalid email or password.');
     }
-  }, []);
+
+    // Live backend API (localhost or remote server)
+    const response = await api.post('/auth/login', { email, password });
+    if (response.data && response.data.user && response.data.token) {
+      const { token, user: userData } = response.data;
+      localStorage.setItem('BakeUrCurl_token', token);
+      localStorage.setItem('BakeUrCurl_user', JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    }
+    throw new Error('Unexpected server response');
+  }, [isStaticHost]);
 
   const register = useCallback(async (formData) => {
-    try {
-      const response = await api.post('/auth/register', formData);
-      if (response.data && response.data.user && response.data.token) {
-        const { token, user: userData } = response.data;
-        localStorage.setItem('BakeUrCurl_token', token);
-        localStorage.setItem('BakeUrCurl_user', JSON.stringify(userData));
-        setUser(userData);
-        return userData;
-      }
-      throw new Error('Unexpected registration response');
-    } catch (err) {
-      if (err.isStaticFallback) {
-        // Fallback for customer demo
-        const newUser = {
-          _id: 'cust-' + Date.now(),
-          name: formData.name || 'Valued Customer',
-          email: formData.email,
-          phone: formData.phone || '',
-          role: 'customer',
-          isActive: true,
-        };
-        const mockToken = 'mock-cust-token-' + Date.now();
-        localStorage.setItem('BakeUrCurl_token', mockToken);
-        localStorage.setItem('BakeUrCurl_user', JSON.stringify(newUser));
-        setUser(newUser);
-        return newUser;
-      }
-      throw err;
+    if (isStaticHost) {
+      const newUser = {
+        _id: 'cust-' + Date.now(),
+        name: formData.name || 'Valued Customer',
+        email: formData.email,
+        phone: formData.phone || '',
+        role: 'customer',
+        isActive: true,
+      };
+      const mockToken = 'mock-cust-token-' + Date.now();
+      localStorage.setItem('BakeUrCurl_token', mockToken);
+      localStorage.setItem('BakeUrCurl_user', JSON.stringify(newUser));
+      setUser(newUser);
+      return newUser;
     }
-  }, []);
+
+    const response = await api.post('/auth/register', formData);
+    if (response.data && response.data.user && response.data.token) {
+      const { token, user: userData } = response.data;
+      localStorage.setItem('BakeUrCurl_token', token);
+      localStorage.setItem('BakeUrCurl_user', JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    }
+    throw new Error('Unexpected registration response');
+  }, [isStaticHost]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('BakeUrCurl_token');
