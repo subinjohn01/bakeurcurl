@@ -238,7 +238,7 @@ const BookingPage = () => {
             Your appointment has been successfully booked. We'll send a confirmation to {customerInfo.email}.
           </p>
           <div style={{ background: 'rgba(52,211₹53,0.1)', border: '1px solid rgba(52,211₹53,0.3)', borderRadius: 12, padding: '16px 20px', marginBottom: 32, textAlign: 'left' }}>
-            <p style={{ color: '#34D399', fontSize: 14, fontWeight: 600 }}>📅 {selectedServic.name}</p>
+            <p style={{ color: '#34D399', fontSize: 14, fontWeight: 600 }}>📅 {selectedService?.name}</p>
             <p style={{ color: 'rgba(251,246,238,0.6)', fontSize: 13, marginTop: 4 }}>{selectedDate} at {selectedSlot}</p>
           </div>
           <button onClick={() => window.location.href = '/'} style={{ background: 'linear-gradient(135deg, #A87A51, #754B2E)', color: '#fff', padding: '12px 28px', borderRadius: 10, fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: 15 }}>
@@ -278,14 +278,14 @@ const BookingPage = () => {
                         gap: 16,
                         padding: '18px 20px',
                         borderRadius: 14,
-                        border: selectedServic._id === svc._id ? '2px solid #A87A51' : '1px solid rgba(251,246,238,0.1)',
-                        background: selectedServic._id === svc._id ? 'rgba(168₹22,81,0.15)' : 'rgba(251,246,238,0.03)',
+                        border: selectedService?._id === svc._id ? '2px solid #A87A51' : '1px solid rgba(251,246,238,0.1)',
+                        background: selectedService?._id === svc._id ? 'rgba(168₹22,81,0.15)' : 'rgba(251,246,238,0.03)',
                         cursor: 'pointer',
                         transition: 'all 0.25s',
-                        boxShadow: selectedServic._id === svc._id ? '0 0 20px rgba(168₹22,81,0.2)' : 'none',
+                        boxShadow: selectedService?._id === svc._id ? '0 0 20px rgba(168₹22,81,0.2)' : 'none',
                       }}
-                      onMouseEnter={e => { if (selectedServic._id !== svc._id) e.currentTarget.style.background = 'rgba(251,246,238,0.07)'; }}
-                      onMouseLeave={e => { if (selectedServic._id !== svc._id) e.currentTarget.style.background = 'rgba(251,246,238,0.03)'; }}
+                      onMouseEnter={e => { if (selectedService?._id !== svc._id) e.currentTarget.style.background = 'rgba(251,246,238,0.07)'; }}
+                      onMouseLeave={e => { if (selectedService?._id !== svc._id) e.currentTarget.style.background = 'rgba(251,246,238,0.03)'; }}
                     >
                       <span style={{ fontSize: 36 }}>{svc.emoji || '✨'}</span>
                       <div style={{ flex: 1 }}>
@@ -293,7 +293,7 @@ const BookingPage = () => {
                         <p style={{ color: 'rgba(251,246,238,0.45)', fontSize: 13, marginTop: 2 }}>{svc.duration} min · {svc.category}</p>
                       </div>
                       <span style={{ color: '#E8B4A0', fontWeight: 800, fontSize: 18 }}>₹{svc.price}</span>
-                      {selectedServic._id === svc._id && (
+                      {selectedService?._id === svc._id && (
                         <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#A87A51', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>✓</div>
                       )}
                     </div>
