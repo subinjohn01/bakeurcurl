@@ -21,7 +21,7 @@ const Booking = require('../models/Booking');
 const getStaff = async (req, res, next) => {
   try {
     const staff = await User.find({ role: 'staff', isActive: true })
-      .select('name email avatar specialization bio')
+      .select('name email phone avatar specialization bio skills isActive')
       .sort({ name: 1 });
 
     res.status(200).json({ success: true, count: staff.length, staff });
@@ -38,7 +38,7 @@ const getStaff = async (req, res, next) => {
  */
 const createStaffMember = async (req, res, next) => {
   try {
-    const { name, email, password, phone, specialization, bio, avatar } = req.body;
+    const { name, email, password, phone, specialization, bio, avatar, skills } = req.body;
 
     // Check for duplicate email
     const existing = await User.findOne({ email });
@@ -58,6 +58,7 @@ const createStaffMember = async (req, res, next) => {
       specialization: specialization || '',
       bio: bio || '',
       avatar: avatar || '',
+      skills: Array.isArray(skills) ? skills : [],
     });
 
     // Don't return password
@@ -84,7 +85,7 @@ const updateStaff = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Staff member not found.' });
     }
 
-    const allowedFields = ['name', 'phone', 'specialization', 'bio', 'avatar', 'isActive'];
+    const allowedFields = ['name', 'phone', 'specialization', 'bio', 'avatar', 'skills', 'isActive'];
     const updateData = {};
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) updateData[field] = req.body[field];
