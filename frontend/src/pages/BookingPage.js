@@ -174,12 +174,13 @@ const BookingPage = () => {
   const steps = ['Select Service', 'Date & Stylist', 'Your Details', 'Payment'];
 
   useEffect(() => {
-    getServices().then(r => setServices(r.dat.services || r.data || [])).catch(() => setServices(mockServices));
+    getServices().then(r => setServices(r.data?.services || r.data || [])).catch(() => setServices(mockServices));
   }, []);
 
   useEffect(() => {
-    if (location.stat.serviceId) {
-      const svc = services.find(s => s._id === location.state.serviceId);
+    const targetServiceId = location.state?.selectedServiceId || location.state?.serviceId;
+    if (targetServiceId && services.length) {
+      const svc = services.find(s => s._id === targetServiceId);
       if (svc) setSelectedService(svc);
     }
   }, [services, location.state]);
@@ -207,7 +208,7 @@ const BookingPage = () => {
         customerInfo,
         paymentOption,
       });
-      setBookingId(res.dat._id || 'MOCK_ID');
+      setBookingId(res.data?._id || 'MOCK_ID');
       if (paymentOption === 'salon') {
         setBookingComplete(true);
         toast.success('Booking confirmed! See you soon 🎉');

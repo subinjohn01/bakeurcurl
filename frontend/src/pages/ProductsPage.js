@@ -32,7 +32,7 @@ const ProductsPage = () => {
     const load = async () => {
       try {
         const res = await getProducts();
-        setProducts(res.dat.products || res.data || []);
+        setProducts(res.data?.products || res.data || []);
       } catch {
         setProducts(mockProducts);
       } finally {

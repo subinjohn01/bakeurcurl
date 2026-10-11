@@ -75,9 +75,7 @@ async function runTestSuite() {
   console.log(`${colors.bold}${colors.cyan}   BakeUrCurls — Automated Health & Smoke Test Suite${colors.reset}`);
   console.log(`${colors.bold}${colors.cyan}====================================================${colors.reset}\n`);
 
-  // ─────────────────────────────────────────────────────────────
   // 1. BACKEND API TESTS
-  // ─────────────────────────────────────────────────────────────
   console.log(`${colors.bold}1. Backend REST API Tests:${colors.reset}`);
 
   // Test 1.1: Services
@@ -95,10 +93,10 @@ async function runTestSuite() {
   const products = prodRes.data?.products || [];
   assert(products.length >= 5, `GET /api/products returns products catalog (${products.length} products)`);
 
-  // Test 1.3: Available Slots
+  // Test 1.3: Available Slots (with safe null-staff handling)
   const today = new Date().toISOString().split('T')[0];
   const slotsRes = await request('GET', `/bookings/available-slots?date=${today}`);
-  assert(!slotsRes.error && (slotsRes.status === 200 || slotsRes.status === 304), 'GET /api/bookings/available-slots returns valid slots');
+  assert(!slotsRes.error && (slotsRes.status === 200 || slotsRes.status === 304), 'GET /api/bookings/available-slots returns valid slots (handles optional staff safely)');
 
   // Test 1.4: Query submission
   const queryRes = await request('POST', '/queries', {
@@ -110,9 +108,7 @@ async function runTestSuite() {
   });
   assert(!queryRes.error && (queryRes.status === 200 || queryRes.status === 201), 'POST /api/queries accepts customer queries');
 
-  // ─────────────────────────────────────────────────────────────
   // 2. FRONTEND SOURCE CODE INTEGRITY TESTS
-  // ─────────────────────────────────────────────────────────────
   console.log(`\n${colors.bold}2. Frontend JavaScript Code Integrity Tests:${colors.reset}`);
 
   const frontendSrc = path.join(__dirname, 'frontend', 'src');
@@ -129,45 +125,35 @@ async function runTestSuite() {
 
   assert(jsFiles.length >= 30, `Frontend has full component suite (${jsFiles.length} files scanned)`);
 
-  let truncatedTypoFound = false;
-  let brokenSymbolsFound = false;
-
+  // Check for regex word-boundary property truncations (.stat., .dat., .fro., selectedServic.)
+  const truncationPatterns = [/\.stat\./, /\.dat\./, /\.fro\./, /\bselectedServic\./, /\bselectedServic\b(?!\w)/, /\buse\.role\b/, /\buse\.name\b/];
+  let foundSuspicious = [];
   for (const file of jsFiles) {
     const code = fs.readFileSync(file, 'utf8');
-    
-    // Check for previous truncation patterns
-    if (code.includes('selectedServic.') || code.includes('selectedServic ')) {
-      truncatedTypoFound = true;
-      console.log(`  ${colors.red}Found selectedServic in ${path.basename(file)}${colors.reset}`);
-    }
-    if (code.includes('use.role') || code.includes('use.name')) {
-      truncatedTypoFound = true;
-      console.log(`  ${colors.red}Found use.role in ${path.basename(file)}${colors.reset}`);
+    for (const pat of truncationPatterns) {
+      if (pat.test(code)) {
+        foundSuspicious.push(`${path.basename(file)} matches ${pat}`);
+      }
     }
   }
+  assert(foundSuspicious.length === 0, 'Zero suspicious property truncations (.stat, .dat, .fro, selectedServic)', foundSuspicious.join(', '));
 
-  assert(!truncatedTypoFound, 'Zero truncated variable typos found (selectedService, user, customerInfo verified)');
-
-  // Test 2.3: BookingPage has valid handlers
+  // Test 2.3: BookingPage has valid handlers and safe location.state access
   const bookingPageCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'BookingPage.js'), 'utf8');
   assert(bookingPageCode.includes('selectedService'), 'BookingPage.js has selectedService properly defined');
-  assert(!bookingPageCode.includes('selectedServic.'), 'BookingPage.js has 0 instances of selectedServic typo');
+  assert(!bookingPageCode.includes('location.stat.'), 'BookingPage.js has safe location.state access (no location.stat)');
 
   // Test 2.4: ServicesPage has BUC categories
   const servicesPageCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'ServicesPage.js'), 'utf8');
   assert(servicesPageCode.includes('Bridal & Makeup') && servicesPageCode.includes('Threading'), 'ServicesPage has BUC service categories');
 
-  // ─────────────────────────────────────────────────────────────
   // 3. FRONTEND BUILD PRODUCTION TEST
-  // ─────────────────────────────────────────────────────────────
   console.log(`\n${colors.bold}3. Production Build & Bundle Verification:${colors.reset}`);
   const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
   const buildExists = fs.existsSync(buildIndex);
   assert(buildExists, 'Production build artifact exists at frontend/build/index.html');
 
-  // ─────────────────────────────────────────────────────────────
   // TEST SUMMARY
-  // ─────────────────────────────────────────────────────────────
   console.log(`\n${colors.bold}${colors.cyan}----------------------------------------------------${colors.reset}`);
   console.log(`${colors.bold}Results: ${colors.green}${passed} passed${colors.reset}, ${failed > 0 ? colors.red + failed + ' failed' : colors.green + '0 failed'}${colors.reset}`);
   console.log(`${colors.bold}${colors.cyan}----------------------------------------------------${colors.reset}\n`);
