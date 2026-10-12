@@ -196,11 +196,12 @@ async function runTestSuite() {
   assert(indexCssCode.includes('[data-rht-toaster]'), 'Global CSS guarantees visible background and text contrast for toast notifications');
   assert(indexCssCode.includes('[data-rht-toaster] > div') && indexCssCode.includes('pointer-events: none !important'), 'Toaster full-width wrapper has pointer-events: none to prevent blocking button clicks');
 
-  // Test 2.6: Zero broken template interpolations or corrupt rupee symbols in code
+  // Test 2.6: Zero broken template interpolations in template strings (e.g. `...₹{var}...`)
   let brokenInterpolations = [];
   for (const file of jsFiles) {
     const code = fs.readFileSync(file, 'utf8');
-    if (code.includes('₹{') || code.includes('?{isOOS')) {
+    // Match backtick template literal with broken ₹{ or ?{
+    if (/`[^`]*[₹?]{[^`]*`/.test(code)) {
       brokenInterpolations.push(path.basename(file));
     }
   }

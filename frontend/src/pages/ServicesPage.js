@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getServices } from '../api/services';
 import { FullPageSpinner } from '../components/ui/LoadingSpinner';
 
-const categories = ['All', 'Hair', 'Coloring', 'Treatments', 'Skincare', 'Waxing', 'Threading', 'Bridal & Makeup'];
+const defaultCategories = ['All', 'Hair', 'Coloring', 'Treatments', 'Skincare', 'Waxing', 'Threading', 'Bridal & Makeup'];
 
 const mockServices = [
   { _id: '1', name: 'Curly Hair Dry Cut & Styling', category: 'Hair', price: 1499, duration: 75, description: 'Signature bespoke dry haircut tailored curl-by-curl to your unique curl pattern and volume. Includes botanical curl wash, deep hydration, and diffuse styling.', emoji: '✂️' },
@@ -16,6 +16,19 @@ const mockServices = [
   { _id: '8', name: 'Makeup & Bridal Artistry', category: 'Bridal & Makeup', price: 4999, duration: 120, description: 'Professional HD party makeup, bridal hair setting, saree draping, and contemporary makeover artistry tailored for your big celebrations.', emoji: '👑' },
 ];
 
+const catEmojiMap = {
+  'hair': '✂️',
+  'haircut': '✂️',
+  'coloring': '🎨',
+  'treatments': '💆‍♀️',
+  'treatment': '💆‍♀️',
+  'skincare': '✨',
+  'waxing': '🍯',
+  'threading': '🪡',
+  'bridal & makeup': '👑',
+  'styling': '💇‍♀️',
+};
+
 const ServicesPage = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState([]);
@@ -26,9 +39,9 @@ const ServicesPage = () => {
     const load = async () => {
       try {
         const res = await getServices();
-        const list = Array.isArray(res.data?.services) 
-          ? res.data.services 
-          : (Array.isArray(res.data) ? res.data : mockServices);
+        const list = Array.isArray(res.data?.services)
+          ? res.data.services
+          : (Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []));
         setServices(list.length > 0 ? list : mockServices);
       } catch {
         setServices(mockServices);
@@ -38,6 +51,10 @@ const ServicesPage = () => {
     };
     load();
   }, []);
+
+  // Compute categories dynamically from actual live services
+  const dynamicCategories = ['All', ...Array.from(new Set(services.map(s => s.category).filter(Boolean)))];
+  const categoriesList = dynamicCategories.length > 1 ? dynamicCategories : defaultCategories;
 
   const filtered = activeCategory === 'All'
     ? services
@@ -83,7 +100,7 @@ const ServicesPage = () => {
 
         {/* Category Filter */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 52 }}>
-          {categories.map(cat => (
+          {categoriesList.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -133,7 +150,15 @@ const ServicesPage = () => {
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                  <span style={{ fontSize: 32 }}>{service.emoji || '✨'}</span>
+                  {service.image ? (
+                    <img
+                      src={service.image}
+                      alt={service.name}
+                      style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', border: '1px solid rgba(241,213,146,0.3)' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 32 }}>{service.emoji || catEmojiMap[service.category?.toLowerCase()] || '✨'}</span>
+                  )}
                   <span
                     style={{
                       background: 'rgba(168, 122, 81, 0.15)',

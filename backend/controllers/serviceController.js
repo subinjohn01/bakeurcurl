@@ -131,23 +131,19 @@ const updateService = async (req, res, next) => {
 
 // ─── deleteService ────────────────────────────────────────────────────────────
 /**
- * @desc    Soft-delete a service (sets isActive = false)
+ * @desc    Delete a service permanently
  * @route   DELETE /api/services/:id
  * @access  Private — admin
  */
 const deleteService = async (req, res, next) => {
   try {
-    const service = await Service.findByIdAndUpdate(
-      req.params.id,
-      { $set: { isActive: false } },
-      { new: true }
-    );
+    const service = await Service.findByIdAndDelete(req.params.id);
 
     if (!service) {
       return res.status(404).json({ success: false, message: 'Service not found.' });
     }
 
-    res.status(200).json({ success: true, message: 'Service deactivated successfully.' });
+    res.status(200).json({ success: true, message: 'Service deleted successfully.' });
   } catch (err) {
     next(err);
   }

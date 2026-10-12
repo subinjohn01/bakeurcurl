@@ -32,9 +32,23 @@ const S = {
   cancelBtn: { padding: '0.7rem 1.5rem', background: 'rgba(251,246,238,0.06)', border: '1px solid rgba(251,246,238,0.12)', borderRadius: '8px', color: '#fff', cursor: 'pointer' },
 };
 
-const emptyForm = { name: '', description: '', price: '', duration: '', category: 'haircut', image: '', isActive: true };
+const categories = ['Hair', 'Coloring', 'Treatments', 'Skincare', 'Waxing', 'Threading', 'Bridal & Makeup'];
 
-const catEmoji = { haircut: '✂️', treatment: '💆', styling: '💇', coloring: '🎨' };
+const emptyForm = { name: '', description: '', price: '', duration: '', category: 'Hair', image: '', isActive: true };
+
+const catEmoji = {
+  'Hair': '✂️',
+  'Coloring': '🎨',
+  'Treatments': '💆‍♀️',
+  'Skincare': '✨',
+  'Waxing': '🍯',
+  'Threading': '🪡',
+  'Bridal & Makeup': '👑',
+  'haircut': '✂️',
+  'treatment': '💆‍♀️',
+  'styling': '💇‍♀️',
+  'coloring': '🎨',
+};
 
 export default function AdminServices() {
   const [services, setServices] = useState([]);
@@ -47,13 +61,20 @@ export default function AdminServices() {
 
   const fetchServices = async () => {
     try {
-      const res = await axiosInstance.get('/services');
-      setServices(res.data.data || []);
+      const res = await axiosInstance.get('/services', { params: { includeInactive: true } });
+      const list = Array.isArray(res.data?.services)
+        ? res.data.services
+        : Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+      setServices(list);
     } catch { toast.error('Failed to load services'); }
   };
 
   const openAdd = () => { setForm(emptyForm); setEditing(null); setShowModal(true); };
-  const openEdit = (s) => { setForm({ name: s.name, description: s.description, price: s.price, duration: s.duration, category: s.category, image: s.image || '', isActive: s.isActive }); setEditing(s._id); setShowModal(true); };
+  const openEdit = (s) => { setForm({ name: s.name, description: s.description, price: s.price, duration: s.duration, category: s.category, image: s.image || '', isActive: s.isActive !== false }); setEditing(s._id); setShowModal(true); };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -74,12 +95,12 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this serviceA')) return;
+    if (!window.confirm('Are you sure you want to delete this service? It will be removed from the services page.')) return;
     try {
       await axiosInstance.delete(`/services/${id}`);
-      toast.success('Service deleted');
+      toast.success('Service deleted successfully');
       fetchServices();
-    } catch { toast.error('Failed to delete'); }
+    } catch { toast.error('Failed to delete service'); }
   };
 
   const handleChange = (e) => {
@@ -92,7 +113,12 @@ export default function AdminServices() {
       <AdminSidebarNav active="/admin/services" />
       <div style={S.content}>
         <div style={S.header}>
-          <h1 style={S.h1}>Services Management</h1>
+          <div>
+            <h1 style={S.h1}>Services Management</h1>
+            <p style={{ color: 'rgba(251,246,238,0.5)', fontSize: '0.85rem', marginTop: 4 }}>
+              Add, update, or remove salon services. All active changes appear live on the website.
+            </p>
+          </div>
           <button style={S.addBtn} onClick={openAdd}>+ Add Service</button>
         </div>
 
@@ -103,10 +129,19 @@ export default function AdminServices() {
                 {s.image ? <img src={s.image} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : catEmoji[s.category] || '✂️'}
               </div>
               <div style={S.cardBody}>
-                <div style={S.catBadge}>{s.category}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={S.catBadge}>{s.category}</div>
+                  {!s.isActive && (
+                    <span style={{ fontSize: '0.7rem', color: '#F87171', background: 'rgba(248,113,113,0.15)', padding: '2px 8px', borderRadius: 10 }}>
+                      Hidden
+                    </span>
+                  )}
+                </div>
                 <div style={S.cardTitle}>{s.name}</div>
-                <div style={S.cardMeta}>{s.duration} min &nbsp;·&nbsp; {s.descriptio.slice(0, 60)}{s.descriptio.length > 60 ? '...' : ''}</div>
-                <div style={S.cardPrice}>${s.price}</div>
+                <div style={S.cardMeta}>
+                  {s.duration} min &nbsp;·&nbsp; {s.description ? (s.description.length > 60 ? `${s.description.slice(0, 60)}...` : s.description) : 'No description'}
+                </div>
+                <div style={S.cardPrice}>₹{s.price}</div>
                 <div style={S.cardActions}>
                   <button style={S.editBtn} onClick={() => openEdit(s)}>✏️ Edit</button>
                   <button style={S.delBtn} onClick={() => handleDelete(s._id)}>🗑️ Delete</button>
@@ -116,7 +151,7 @@ export default function AdminServices() {
           ))}
           {services.length === 0 && (
             <div style={{ color: 'rgba(251,246,238,0.35)', gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
-              No services yet. Click "+ Add Service" to get started.
+              No services found. Click "+ Add Service" to add one!
             </div>
           )}
         </div>
@@ -128,31 +163,30 @@ export default function AdminServices() {
             <h2 style={S.mh2}>{editing ? 'Edit Service' : 'Add New Service'}</h2>
             <form onSubmit={handleSave}>
               <label style={S.label}>Service Name *</label>
-              <input style={S.minput} name="name" value={form.name} onChange={handleChange} placeholder="e.g. Curly Hair Cut & Style" />
-              <label style={S.label}>Description</label>
-              <input style={S.minput} name="description" value={form.description} onChange={handleChange} placeholder="Brief description..." />
+              <input style={S.minput} name="name" value={form.name} onChange={handleChange} placeholder="e.g. Curly Hair Dry Cut & Styling" required />
+              <label style={S.label}>Description *</label>
+              <input style={S.minput} name="description" value={form.description} onChange={handleChange} placeholder="Describe the service..." required />
               <div style={S.row2}>
                 <div>
                   <label style={S.label}>Price (₹) *</label>
-                  <input style={S.minput} name="price" type="number" value={form.price} onChange={handleChange} placeholder="1500" />
+                  <input style={S.minput} name="price" type="number" value={form.price} onChange={handleChange} placeholder="1499" required />
                 </div>
                 <div>
                   <label style={S.label}>Duration (mins) *</label>
-                  <input style={S.minput} name="duration" type="number" value={form.duration} onChange={handleChange} placeholder="60" />
+                  <input style={S.minput} name="duration" type="number" value={form.duration} onChange={handleChange} placeholder="60" required />
                 </div>
               </div>
               <label style={S.label}>Category</label>
               <select style={S.mselect} name="category" value={form.category} onChange={handleChange}>
-                <option value="haircut">Haircut</option>
-                <option value="treatment">Treatment</option>
-                <option value="styling">Styling</option>
-                <option value="coloring">Coloring</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
-              <label style={S.label}>Image URL</label>
+              <label style={S.label}>Image URL (optional)</label>
               <input style={S.minput} name="image" value={form.image} onChange={handleChange} placeholder="https://..." />
               <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                 <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
-                Active (visible to customers)
+                Active (visible on website & booking page)
               </label>
               <div style={S.mBtns}>
                 <button type="submit" style={{ ...S.saveBtn, opacity: loading ? 0.7 : 1 }} disabled={loading}>
