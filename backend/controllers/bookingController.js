@@ -10,6 +10,7 @@
  *   getAvailableSlots    GET   /api/bookings/available-slots (public)
  */
 
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
@@ -50,6 +51,11 @@ const createBooking = async (req, res, next) => {
       notes,
       couponCode,
       customerInfo,
+      customerId,
+      status,
+      paymentStatus,
+      totalAmount: customTotal,
+      advanceAmount: customAdvance,
       // Guest fields (used when not authenticated)
       guestName,
       guestEmail,
@@ -57,52 +63,76 @@ const createBooking = async (req, res, next) => {
     } = req.body;
 
     const gName = guestName || customerInfo?.name;
-    const gEmail = guestEmail || customerInfo?.email;
-    const gPhone = guestPhone || customerInfo?.phone;
+    const gEmail = guestEmail || customerInfo?.email || '';
+    const gPhone = guestPhone || customerInfo?.phone || '';
     const bookingNotes = notes || customerInfo?.notes || '';
 
-    // Validate service exists and is active
-    const service = await Service.findById(serviceId);
-    if (!service || !service.isActive) {
-      return res.status(404).json({ success: false, message: 'Service not found or inactive.' });
+    // Validate or find service
+    let service = null;
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
+      service = await Service.findById(serviceId);
+    }
+    if (!service) {
+      service = await Service.findOne({ isActive: true });
+    }
+    if (!service) {
+      service = await Service.create({
+        name: 'Haircut & Styling',
+        description: 'Standard Salon Service',
+        price: 999,
+        duration: 60,
+        category: 'haircut',
+        isActive: true,
+      });
     }
 
-    // Validate staff exists and is active
-    const staff = await User.findOne({ _id: staffId, role: 'staff', isActive: true });
+    // Validate or find staff
+    let staff = null;
+    if (staffId && mongoose.Types.ObjectId.isValid(staffId)) {
+      staff = await User.findOne({ _id: staffId, role: 'staff', isActive: true });
+    }
+    if (!staff) {
+      staff = (await User.findOne({ role: 'staff', isActive: true })) || (await User.findOne({ role: 'admin' }));
+    }
     if (!staff) {
       return res.status(404).json({ success: false, message: 'Staff member not found or unavailable.' });
     }
 
     // Check for slot conflict (same staff, same date, same time)
-    const bookingDate = new Date(date);
+    const bookingDate = date ? new Date(date) : new Date();
     bookingDate.setHours(0, 0, 0, 0);
-    const nextDay = new Date(bookingDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const resolvedSlot = timeSlot || '10:00 AM';
 
-    const conflict = await Booking.findOne({
-      staff: staffId,
-      date: { $gte: bookingDate, $lt: nextDay },
-      timeSlot,
-      status: { $in: ['pending', 'confirmed'] },
-    });
+    const isAdminOrStaff = req.user && (req.user.role === 'admin' || req.user.role === 'staff');
+    if (!isAdminOrStaff) {
+      const nextDay = new Date(bookingDate);
+      nextDay.setDate(nextDay.getDate() + 1);
 
-    if (conflict) {
-      return res.status(409).json({
-        success: false,
-        message: 'This time slot is already booked for the selected staff member.',
+      const conflict = await Booking.findOne({
+        staff: staff._id,
+        date: { $gte: bookingDate, $lt: nextDay },
+        timeSlot: resolvedSlot,
+        status: { $in: ['pending', 'confirmed'] },
       });
+
+      if (conflict) {
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot is already booked for the selected staff member.',
+        });
+      }
     }
 
     // Determine total and advance payment amounts with optional coupon
-    const originalAmount = service.price;
+    const originalAmount = customTotal !== undefined ? Number(customTotal) : service.price;
     let totalAmount = originalAmount;
     let discountAmount = 0;
     let appliedCoupon = null;
 
     if (couponCode) {
       const normalizedCode = couponCode.trim().toUpperCase();
-      const userEmail = req.user ? req.user.email : gEmail;
-      const userPhone = req.user ? req.user.phone : gPhone;
+      const userEmail = (req.user && req.user.role === 'customer') ? req.user.email : gEmail;
+      const userPhone = (req.user && req.user.role === 'customer') ? req.user.phone : gPhone;
 
       const cleanUserPhone = userPhone ? String(userPhone).replace(/\D/g, '').slice(-10) : '';
 
@@ -140,34 +170,36 @@ const createBooking = async (req, res, next) => {
       }
     }
 
-    const advanceAmount = parseFloat((totalAmount * 0.3).toFixed(2));
+    const advanceAmount = customAdvance !== undefined
+      ? Number(customAdvance)
+      : parseFloat((totalAmount * 0.3).toFixed(2));
 
     // Build booking document
     const bookingData = {
-      service: serviceId,
-      staff: staffId,
+      service: service._id,
+      staff: staff._id,
       date: bookingDate,
-      timeSlot,
+      timeSlot: resolvedSlot,
       originalAmount,
       totalAmount,
       discountAmount,
       couponCode: appliedCoupon ? appliedCoupon.code : null,
       advanceAmount,
       notes: bookingNotes,
+      status: status || (isAdminOrStaff ? 'confirmed' : 'pending'),
+      paymentStatus: paymentStatus || 'unpaid',
     };
 
-    if (req.user) {
-      // Authenticated customer
+    if (isAdminOrStaff && customerId && mongoose.Types.ObjectId.isValid(customerId)) {
+      bookingData.customer = customerId;
+    } else if (req.user && req.user.role === 'customer') {
       bookingData.customer = req.user._id;
     } else {
-      // Guest booking — require guest info
-      if (!gName || !gEmail || !gPhone) {
-        return res.status(400).json({
-          success: false,
-          message: 'Guest name, email, and phone are required for guest bookings.',
-        });
-      }
-      bookingData.guestInfo = { name: gName, email: gEmail, phone: gPhone };
+      bookingData.guestInfo = {
+        name: gName || 'Customer',
+        email: gEmail || '',
+        phone: gPhone || '',
+      };
     }
 
     const booking = await Booking.create(bookingData);
@@ -361,6 +393,99 @@ const updateBookingStatus = async (req, res, next) => {
     await booking.save();
 
     res.status(200).json({ success: true, booking });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── updateBooking ────────────────────────────────────────────────────────────
+/**
+ * @desc    Update full booking details (staff / admin)
+ * @route   PUT /api/bookings/:id
+ * @access  Private — staff, admin
+ */
+const updateBooking = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const {
+      serviceId,
+      staffId,
+      date,
+      timeSlot,
+      status,
+      totalAmount,
+      advanceAmount,
+      paymentStatus,
+      notes,
+      guestName,
+      guestEmail,
+      guestPhone,
+      customerName,
+      customerEmail,
+      customerPhone,
+      customerId,
+    } = req.body;
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
+      booking.service = serviceId;
+    }
+    if (staffId && mongoose.Types.ObjectId.isValid(staffId)) {
+      booking.staff = staffId;
+    }
+    if (date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      booking.date = d;
+    }
+    if (timeSlot) booking.timeSlot = timeSlot;
+    if (status) booking.status = status;
+    if (totalAmount !== undefined && totalAmount !== '') booking.totalAmount = Number(totalAmount);
+    if (advanceAmount !== undefined && advanceAmount !== '') booking.advanceAmount = Number(advanceAmount);
+    if (paymentStatus) booking.paymentStatus = paymentStatus;
+    if (notes !== undefined) booking.notes = notes;
+
+    const finalName = customerName || guestName;
+    const finalPhone = customerPhone || guestPhone;
+    const finalEmail = customerEmail || guestEmail;
+
+    if (customerId && mongoose.Types.ObjectId.isValid(customerId)) {
+      booking.customer = customerId;
+      booking.guestInfo = undefined;
+    } else if (booking.guestInfo) {
+      if (finalName) booking.guestInfo.name = finalName;
+      if (finalPhone !== undefined) booking.guestInfo.phone = finalPhone;
+      if (finalEmail !== undefined) booking.guestInfo.email = finalEmail;
+    } else if (booking.customer) {
+      if (finalName || finalPhone || finalEmail) {
+        const cust = await User.findById(booking.customer);
+        if (cust) {
+          if (finalName) cust.name = finalName;
+          if (finalPhone) cust.phone = finalPhone;
+          if (finalEmail) cust.email = finalEmail;
+          await cust.save();
+        }
+      }
+    } else if (finalName) {
+      booking.guestInfo = {
+        name: finalName,
+        phone: finalPhone || '',
+        email: finalEmail || '',
+      };
+    }
+
+    await booking.save();
+
+    const populated = await Booking.findById(booking._id)
+      .populate('customer', 'name email phone')
+      .populate('service', 'name price duration category')
+      .populate('staff', 'name email');
+
+    res.status(200).json({ success: true, booking: populated });
   } catch (err) {
     next(err);
   }
@@ -587,6 +712,7 @@ module.exports = {
   createBooking,
   getBookings,
   getBookingById,
+  updateBooking,
   updateBookingStatus,
   cancelBooking,
   getAvailableSlots,

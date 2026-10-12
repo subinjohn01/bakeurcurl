@@ -329,6 +329,26 @@ export default function AdminDashboard() {
             Overview Dashboard
           </h1>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Link
+              to="/admin/bookings"
+              style={{
+                padding: '9px 16px',
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #A87A51, #754B2E)',
+                border: 'none',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                textDecoration: 'none',
+                boxShadow: '0 4px 12px rgba(168,122,81,0.3)',
+              }}
+            >
+              ➕ Book Appointment
+            </Link>
             <button
               onClick={handleExportCSV}
               style={{

@@ -203,7 +203,8 @@ const BookingPage = () => {
   };
 
   const handleBookingSubmit = async () => {
-    if (!customerInfo.name || !customerInfo.email) return toast.error('Please enter name and email');
+    if (!customerInfo.name) return toast.error('Please enter your name');
+    if (!customerInfo.phone && !customerInfo.email) return toast.error('Please provide a mobile number or email');
     if (!paymentOption) return toast.error('Please choose a payment option');
     setLoading(true);
     try {
@@ -213,25 +214,23 @@ const BookingPage = () => {
         timeSlot: selectedSlot,
         staffId: selectedStylist?._id,
         customerInfo,
+        guestName: customerInfo.name,
+        guestEmail: customerInfo.email,
+        guestPhone: customerInfo.phone,
+        notes: customerInfo.notes,
         paymentOption,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       });
-      setBookingId(res.data?._id || 'BUC-' + Math.floor(1000 + Math.random() * 9000));
+      const returnedBooking = res.data?.booking || res.data;
+      setBookingId(returnedBooking?.bookingId || returnedBooking?._id || 'BUC-' + Math.floor(1000 + Math.random() * 9000));
       if (paymentOption === 'salon') {
         setBookingComplete(true);
         toast.success('Appointment confirmed! See you at BakeUrCurls ✨');
       } else {
         setStep(3);
       }
-    } catch {
-      // Graceful offline mock confirmation
-      setBookingId('BUC-' + Math.floor(1000 + Math.random() * 9000));
-      if (paymentOption === 'salon') {
-        setBookingComplete(true);
-        toast.success('Appointment booked successfully!');
-      } else {
-        setStep(3);
-      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Booking failed. Please check details and try again.');
     } finally {
       setLoading(false);
     }
@@ -527,8 +526,8 @@ const BookingPage = () => {
                   Your Contact Details
                 </h2>
                 <Input label="Full Name" value={customerInfo.name} onChange={v => setCustomerInfo(p => ({ ...p, name: v }))} placeholder="Your name" required />
-                <Input label="Email Address" type="email" value={customerInfo.email} onChange={v => setCustomerInfo(p => ({ ...p, email: v }))} placeholder="you@example.com" required />
-                <Input label="Phone Number" type="tel" value={customerInfo.phone} onChange={v => setCustomerInfo(p => ({ ...p, phone: v }))} placeholder="+91 70120 01472" required />
+                <Input label="Mobile Number (WhatsApp updates)" type="tel" value={customerInfo.phone} onChange={v => setCustomerInfo(p => ({ ...p, phone: v }))} placeholder="+91 98765 43210" required />
+                <Input label="Email Address (Optional)" type="email" value={customerInfo.email} onChange={v => setCustomerInfo(p => ({ ...p, email: v }))} placeholder="you@example.com" />
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
                     Special Requests / Hair History (Optional)

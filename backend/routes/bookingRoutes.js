@@ -14,6 +14,7 @@ const {
   createBooking,
   getBookings,
   getBookingById,
+  updateBooking,
   updateBookingStatus,
   cancelBooking,
   getAvailableSlots,
@@ -38,11 +39,12 @@ router.route('/send-daily-reminders')
   .get(optionalAuth, sendDailyReminders);
 
 // Auth — customer/staff/admin
-router.post('/', createBooking); // Supports both guest and auth
+router.post('/', optionalAuth, createBooking); // Supports guest, customer, and admin
 router.get('/', protect, getBookings);
 router.get('/:id', protect, getBookingById);
 
-// Staff / Admin only
+// Staff / Admin only: Full booking update & status update
+router.put('/:id', protect, authorize('staff', 'admin'), updateBooking);
 router.patch('/:id/status', protect, authorize('staff', 'admin'), updateBookingStatus);
 
 // Any authenticated user (customer cancels own, admin/staff cancel any)

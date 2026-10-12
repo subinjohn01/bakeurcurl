@@ -7,7 +7,7 @@
  * Ensures uniqueness by checking against the Booking collection.
  */
 
-const Booking = require('../models/Booking');
+const mongoose = require('mongoose');
 
 /**
  * Generate a random 4-character alphanumeric string (uppercase).
@@ -38,8 +38,13 @@ const generateBookingId = async () => {
     const bookingId = `CURL-${year}-${randomSuffix()}`;
 
     // Check for collision in the database
-    const existing = await Booking.findOne({ bookingId }).lean();
-    if (!existing) {
+    const Booking = mongoose.models.Booking;
+    if (Booking) {
+      const existing = await Booking.findOne({ bookingId }).lean();
+      if (!existing) {
+        return bookingId;
+      }
+    } else {
       return bookingId;
     }
 

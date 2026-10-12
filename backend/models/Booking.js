@@ -15,9 +15,9 @@ const generateBookingId = require('../utils/generateBookingId');
 // ─── Guest Info Sub-document ──────────────────────────────────────────────────
 const guestInfoSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, lowercase: true, trim: true },
-    phone: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true, default: 'Customer' },
+    email: { type: String, required: false, lowercase: true, trim: true, default: '' },
+    phone: { type: String, required: false, trim: true, default: '' },
   },
   { _id: false }
 );

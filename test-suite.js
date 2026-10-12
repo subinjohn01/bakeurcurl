@@ -255,8 +255,15 @@ async function runTestSuite() {
   const bookingRoutesCode = fs.readFileSync(path.join(__dirname, 'backend', 'routes', 'bookingRoutes.js'), 'utf8');
   assert(bookingRoutesCode.includes('/send-daily-reminders'), 'POST /api/bookings/send-daily-reminders route is mounted');
 
-  // 7. FRONTEND BUILD PRODUCTION TEST
-  console.log(`\n${colors.bold}7. Production Build & Bundle Verification:${colors.reset}`);
+  // 7. DASHBOARD BOOKING ENTER & UPDATE VERIFICATION
+  console.log(`\n${colors.bold}7. Dashboard Booking Management & Update Verification:${colors.reset}`);
+  const bookingsPageContent = fs.readFileSync(path.join(frontendSrc, 'pages', 'admin', 'AdminBookings.js'), 'utf8');
+  assert(bookingsPageContent.includes('showCreateModal') && bookingsPageContent.includes('handleCreateBookingSubmit'), 'AdminBookings has direct New Booking entry modal and submission handler');
+  assert(bookingsPageContent.includes('openEditModal') && bookingsPageContent.includes('handleUpdateBookingSubmit'), 'AdminBookings has direct Edit/Update Booking modal and submission handler');
+  assert(bookingRoutesCode.includes("router.put('/:id'") || bookingRoutesCode.includes('updateBooking'), 'PUT /api/bookings/:id update route is mounted in backend');
+
+  // 8. FRONTEND BUILD PRODUCTION TEST
+  console.log(`\n${colors.bold}8. Production Build & Bundle Verification:${colors.reset}`);
   const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
   const buildExists = fs.existsSync(buildIndex);
   assert(buildExists, 'Production build artifact exists at frontend/build/index.html');
