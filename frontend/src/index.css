@@ -1,4 +1,4 @@
-﻿*, *::before, *::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -124,7 +124,7 @@ img {
 }
 
 .react-calendar__tile:hover {
-  background: rgba(168₹22,81,0.3) !important;
+  background: rgba(168,122,81,0.3) !important;
 }
 
 .react-calendar__tile--active {
@@ -132,7 +132,7 @@ img {
 }
 
 .react-calendar__tile--now {
-  background: rgba(232₹80₹60,0.2) !important;
+  background: rgba(232,180,160,0.2) !important;
 }
 
 .react-calendar__navigation button {
@@ -140,10 +140,26 @@ img {
 }
 
 .react-calendar__navigation button:hover {
-  background: rgba(168₹22,81,0.2) !important;
+  background: rgba(168,122,81,0.2) !important;
   border-radius: 8px !important;
 }
 
 .react-calendar__month-view__weekdays__weekday {
   color: rgba(255,255,255,0.5) !important;
+}
+
+/* React Hot Toast Global Styling & Visibility Guarantee */
+[data-rht-toaster] > div {
+  background: #231812 !important;
+  color: #FBF6EE !important;
+  border: 1px solid rgba(241, 213, 146, 0.35) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+[data-rht-toaster] div[role="status"] {
+  color: #FBF6EE !important;
 }

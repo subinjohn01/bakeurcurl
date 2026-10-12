@@ -329,7 +329,7 @@ export default function LoginPage() {
             </button>
           </form>
           <div style={styles.footer}>
-            Don't have an account?{' '}
+            Don't have an account${' '}
             <Link to="/register" style={styles.link}>Create one</Link>
             <br /><br />
             <Link to="/" style={{ ...styles.link, color: 'rgba(251,246,238,0.4)' }}>

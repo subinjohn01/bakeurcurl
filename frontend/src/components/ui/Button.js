@@ -5,7 +5,7 @@ const variants = {
     background: 'linear-gradient(135deg, #A87A51, #754B2E)',
     color: '#fff',
     border: 'none',
-    boxShadow: '0 4px 20px rgba(168₹22,81,0.4)',
+    boxShadow: '0 4px 20px rgba(168,122,81,0.4)',
   },
   secondary: {
     background: 'transparent',

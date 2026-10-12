@@ -11,14 +11,14 @@ const S = {
   addBtn: { padding: '0.7rem 1.4rem', background: 'linear-gradient(135deg, #A87A51, #754B2E)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' },
   card: { background: 'rgba(251,246,238,0.04)', border: '1px solid rgba(251,246,238,0.08)', borderRadius: '12px', overflow: 'hidden' },
-  cardImgArea: { width: '100%', height: '150px', background: 'rgba(232₹80₹60,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' },
+  cardImgArea: { width: '100%', height: '150px', background: 'rgba(232,180,160,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' },
   cardBody: { padding: '1.25rem' },
   cardTitle: { fontWeight: '700', fontSize: '1rem', marginBottom: '0.3rem' },
   cardMeta: { color: 'rgba(251,246,238,0.5)', fontSize: '0.8rem', marginBottom: '0.3rem' },
   cardPrice: { color: '#E8B4A0', fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.75rem' },
   stock: (low) => ({ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '700', marginBottom: '0.75rem', background: low ? '#EF444415' : '#10B98115', color: low ? '#f87171' : '#34d399' }),
   cardActions: { display: 'flex', gap: '0.5rem' },
-  editBtn: { flex: 1, padding: '0.5rem', background: 'rgba(168₹22,81,0.15)', border: '1px solid rgba(168₹22,81,0.3)', borderRadius: '6px', color: '#D4AF8F', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
+  editBtn: { flex: 1, padding: '0.5rem', background: 'rgba(168,122,81,0.15)', border: '1px solid rgba(168,122,81,0.3)', borderRadius: '6px', color: '#D4AF8F', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
   delBtn: { flex: 1, padding: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#f87171', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   modal: { background: '#291C14', border: '1px solid rgba(251,246,238,0.1)', borderRadius: '16px', padding: '2rem', width: '90%', maxWidth: '520px', maxHeight: '90vh', overflow: 'auto' },
@@ -209,9 +209,9 @@ export default function AdminProducts() {
               <div style={S.cardBody}>
                 <div style={S.cardTitle}>{p.name}</div>
                 <div style={S.cardMeta}>{p.brand} · {p.category}</div>
-                <div style={S.cardPrice}>₹{p.price}</div>
+                <div style={S.cardPrice}>${p.price}</div>
                 <div style={S.stock(p.stock < 5)}>
-                  {p.stock > 0 ? `₹{p.stock} in stock₹{p.stock < 5 ? ' — Low!' : ''}` : 'Out of stock'}
+                  {p.stock > 0 ? `${p.stock} in stock${p.stock < 5 ? ' — Low!' : ''}` : 'Out of stock'}
                 </div>
                 <div style={S.cardActions}>
                   <button style={S.editBtn} onClick={() => openEdit(p)}>✏️ Edit</button>

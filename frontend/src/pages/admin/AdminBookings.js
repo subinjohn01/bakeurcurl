@@ -204,7 +204,7 @@ export default function AdminBookings() {
                   <td style={S.td}>{b.customer?.name || b.guestInfo?.name || 'Guest'}</td>
                   <td style={S.td}>{b.service?.name || 'Service'}</td>
                   <td style={S.td}>{new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {b.timeSlot}</td>
-                  <td style={S.td}>₹{b.totalAmount}</td>
+                  <td style={S.td}>${b.totalAmount}</td>
                   <td style={S.td}><Badge s={b.paymentStatus} colorMap={paymentColors} /></td>
                   <td style={S.td}><Badge s={b.status} colorMap={statusColors} /></td>
                   <td style={S.td}>
@@ -235,8 +235,8 @@ export default function AdminBookings() {
               ['Stylist', selected.staf.name || 'Any'],
               ['Date', new Date(selected.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
               ['Time', selected.timeSlot],
-              ['Total', `₹₹{selected.totalAmount}`],
-              ['Advance', selected.advanceAmount ? `₹₹{selected.advanceAmount}` : 'None'],
+              ['Total', `₹${selected.totalAmount}`],
+              ['Advance', selected.advanceAmount ? `₹${selected.advanceAmount}` : 'None'],
               ['Payment', selected.paymentStatu.replace('_', ' ')],
               ['Status', selected.status],
               ['Notes', selected.notes || '—'],

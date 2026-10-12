@@ -143,8 +143,8 @@ const HomePage = () => {
         }}
       >
         {/* Background blobs */}
-        <div style={{ position: 'absolute', top:-100, left:-100, width: 500, height: 500, background: 'radial-gradient(circle, rgba(168₹22,81,0.25) 0%, transparent 65%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom:-100, right:-50, width: 400, height: 400, background: 'radial-gradient(circle, rgba(232₹80₹60,0.15) 0%, transparent 65%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top:-100, left:-100, width: 500, height: 500, background: 'radial-gradient(circle, rgba(168,122,81,0.25) 0%, transparent 65%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom:-100, right:-50, width: 400, height: 400, background: 'radial-gradient(circle, rgba(232,180,160,0.15) 0%, transparent 65%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
 
         <div
           ref={heroRef}
@@ -166,8 +166,8 @@ const HomePage = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                background: 'rgba(168₹22,81,0.15)',
-                border: '1px solid rgba(168₹22,81,0.3)',
+                background: 'rgba(168,122,81,0.15)',
+                border: '1px solid rgba(168,122,81,0.3)',
                 borderRadius: 24,
                 padding: '6px 16px',
                 marginBottom: 28,
@@ -225,12 +225,12 @@ const HomePage = () => {
                   fontWeight: 700,
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 8px 30px rgba(168₹22,81,0.45)',
+                  boxShadow: '0 8px 30px rgba(168,122,81,0.45)',
                   transition: 'all 0.3s',
                   letterSpacing: '0.3px',
                 }}
-                onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 12px 40px rgba(168₹22,81,0.6)'; }}
-                onMouseLeave={e => { e.target.style.transform = 'none'; e.target.style.boxShadow = '0 8px 30px rgba(168₹22,81,0.45)'; }}
+                onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 12px 40px rgba(168,122,81,0.6)'; }}
+                onMouseLeave={e => { e.target.style.transform = 'none'; e.target.style.boxShadow = '0 8px 30px rgba(168,122,81,0.45)'; }}
               >
                 Book Appointment →
               </button>
@@ -247,7 +247,7 @@ const HomePage = () => {
                   cursor: 'pointer',
                   transition: 'all 0.3s',
                 }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(232₹80₹60,0.1)'; e.target.style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(232,180,160,0.1)'; e.target.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.transform = 'none'; }}
               >
                 Explore Services
@@ -273,7 +273,7 @@ const HomePage = () => {
       </section>
 
       {/* ── WHY BakeUrCurls ── */}
-      <section style={{ padding: '100px 24px', background: 'rgba(168₹22,81,0.04)' }}>
+      <section style={{ padding: '100px 24px', background: 'rgba(168,122,81,0.04)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 700, color: '#F1D592', marginBottom: 16 }}>
@@ -297,7 +297,7 @@ const HomePage = () => {
                 onMouseEnter={e => {
                   e.currentTarget.style.background = 'rgba(251,246,238,0.09)';
                   e.currentTarget.style.transform = 'translateY(-6px)';
-                  e.currentTarget.style.borderColor = `₹{f.color}50`;
+                  e.currentTarget.style.borderColor = `${f.color}50`;
                   e.currentTarget.style.boxShadow = `0 20px 60px rgba(0,0,0,0.3)`;
                 }}
                 onMouseLeave={e => {
@@ -312,8 +312,8 @@ const HomePage = () => {
                     width: 56,
                     height: 56,
                     borderRadius: 16,
-                    background: `₹{f.color}20`,
-                    border: `1px solid ₹{f.color}35`,
+                    background: `${f.color}20`,
+                    border: `1px solid ${f.color}35`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -347,12 +347,12 @@ const HomePage = () => {
                 color: '#E8B4A0',
                 fontSize: 15,
                 fontWeight: 600,
-                border: '1px solid rgba(232₹80₹60,0.4)',
+                border: '1px solid rgba(232,180,160,0.4)',
                 padding: '10px 20px',
                 borderRadius: 10,
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(232₹80₹60,0.1)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,180,160,0.1)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               View All →
@@ -373,8 +373,8 @@ const HomePage = () => {
                 onClick={() => navigate('/book')}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-6px)';
-                  e.currentTarget.style.boxShadow = '0 24px 60px rgba(168₹22,81,0.25)';
-                  e.currentTarget.style.borderColor = 'rgba(168₹22,81,0.4)';
+                  e.currentTarget.style.boxShadow = '0 24px 60px rgba(168,122,81,0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(168,122,81,0.4)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'none';
@@ -386,7 +386,7 @@ const HomePage = () => {
                 <div
                   style={{
                     height: 160,
-                    background: `linear-gradient(135deg, rgba(168₹22,81,0.3), rgba(74,47,30,0.2))`,
+                    background: `linear-gradient(135deg, rgba(168,122,81,0.3), rgba(74,47,30,0.2))`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -395,13 +395,13 @@ const HomePage = () => {
                     overflow: 'hidden',
                   }}
                 >
-                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(168₹22,81,0.2), transparent 70%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(168,122,81,0.2), transparent 70%)' }} />
                   {s.emoji}
                 </div>
                 <div style={{ padding: '20px 22px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <h3 style={{ color: '#fff', fontSize: 17, fontWeight: 700, lineHeight: 1.3 }}>{s.name}</h3>
-                    <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800, flexShrink: 0, marginLeft: 8 }}>₹{s.price}</span>
+                    <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800, flexShrink: 0, marginLeft: 8 }}>${s.price}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: 'rgba(251,246,238,0.4)', fontSize: 13 }}>⏱ {s.duration} min · {s.category}</span>
@@ -430,7 +430,7 @@ const HomePage = () => {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: '100px 24px', background: 'rgba(168₹22,81,0.04)' }}>
+      <section style={{ padding: '100px 24px', background: 'rgba(168,122,81,0.04)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: '#fff', marginBottom: 16 }}>
@@ -448,7 +448,7 @@ const HomePage = () => {
                   position: 'relative',
                 }}
               >
-                <div style={{ fontSize: 40, color: 'rgba(168₹22,81,0.5)', fontFamily: 'serif', lineHeight: 1, marginBottom: 16 }}>"</div>
+                <div style={{ fontSize: 40, color: 'rgba(168,122,81,0.5)', fontFamily: 'serif', lineHeight: 1, marginBottom: 16 }}>"</div>
                 <p style={{ color: 'rgba(251,246,238,0.75)', fontSize: 15, lineHeight: 1.75, marginBottom: 24, fontStyle: 'italic' }}>
                   {t.quote}
                 </p>
@@ -472,8 +472,8 @@ const HomePage = () => {
           style={{
             maxWidth: 900,
             margin: '0 auto',
-            background: 'linear-gradient(135deg, rgba(168₹22,81,0.35), rgba(74,47,30,0.25))',
-            border: '1px solid rgba(168₹22,81,0.4)',
+            background: 'linear-gradient(135deg, rgba(168,122,81,0.35), rgba(74,47,30,0.25))',
+            border: '1px solid rgba(168,122,81,0.4)',
             borderRadius: 24,
             padding: '60px 48px',
             textAlign: 'center',
@@ -481,7 +481,7 @@ const HomePage = () => {
             overflow: 'hidden',
           }}
         >
-          <div style={{ position: 'absolute', top:-60, right:-60, width: 200, height: 200, background: 'radial-gradient(circle, rgba(232₹80₹60,0.2), transparent 70%)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', top:-60, right:-60, width: 200, height: 200, background: 'radial-gradient(circle, rgba(232,180,160,0.2), transparent 70%)', borderRadius: '50%' }} />
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: '#fff', marginBottom: 16 }}>
             Ready to Love Your Curls?
           </h2>
@@ -499,11 +499,11 @@ const HomePage = () => {
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 8px 30px rgba(168₹22,81,0.5)',
+              boxShadow: '0 8px 30px rgba(168,122,81,0.5)',
               transition: 'all 0.3s',
             }}
-            onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 14px 40px rgba(168₹22,81,0.7)'; }}
-            onMouseLeave={e => { e.target.style.transform = 'none'; e.target.style.boxShadow = '0 8px 30px rgba(168₹22,81,0.5)'; }}
+            onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 14px 40px rgba(168,122,81,0.7)'; }}
+            onMouseLeave={e => { e.target.style.transform = 'none'; e.target.style.boxShadow = '0 8px 30px rgba(168,122,81,0.5)'; }}
           >
             Book Your Appointment →
           </button>

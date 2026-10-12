@@ -50,9 +50,9 @@ const Modal = ({ open, onClose, title, children, maxWidth = 600 }) => {
       >
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(168₹22,81,0.15), rgba(35,24₹8,0.95))',
+            background: 'linear-gradient(135deg, rgba(168,122,81,0.15), rgba(35,24,18,0.95))',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(168₹22,81,0.3)',
+            border: '1px solid rgba(168,122,81,0.3)',
             borderRadius: 16,
             padding: '28px 32px',
             color: '#fff',

@@ -176,7 +176,7 @@ const ServicesPage = () => {
                   }}
                 >
                   <div>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: '#F1D592' }}>₹{service.price}</span>
+                    <span style={{ fontSize: 24, fontWeight: 800, color: '#F1D592' }}>${service.price}</span>
                     <span style={{ color: 'rgba(251,246,238,0.5)', fontSize: 13, marginLeft: 6 }}>/ session</span>
                   </div>
                   <span style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>⏱️ {service.duration} mins</span>

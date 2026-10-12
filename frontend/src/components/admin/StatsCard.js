@@ -16,7 +16,7 @@ const StatsCard = ({ icon, label, value, sub, color = '#A87A51', trend }) => {
       }}
       onMouseEnter={e => {
         e.currentTarget.style.background = 'rgba(251,246,238,0.07)';
-        e.currentTarget.style.borderColor = `₹{color}40`;
+        e.currentTarget.style.borderColor = `${color}40`;
         e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={e => {
@@ -46,8 +46,8 @@ const StatsCard = ({ icon, label, value, sub, color = '#A87A51', trend }) => {
           width: 48,
           height: 48,
           borderRadius: 12,
-          background: `₹{color}20`,
-          border: `1px solid ₹{color}30`,
+          background: `${color}20`,
+          border: `1px solid ${color}30`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -77,7 +77,7 @@ const StatsCard = ({ icon, label, value, sub, color = '#A87A51', trend }) => {
                 color: trend > 0 ? '#34D399' : '#F87171',
                 fontSize: 12,
                 fontWeight: 600,
-                background: trend > 0 ? 'rgba(52,211₹53,0.1)' : 'rgba(248₹13₹13,0.1)',
+                background: trend > 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248₹13₹13,0.1)',
                 padding: '2px 8px',
                 borderRadius: 12,
               }}

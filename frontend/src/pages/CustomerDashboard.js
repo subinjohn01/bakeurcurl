@@ -60,9 +60,9 @@ function StatusBadge({ status }) {
   return (
     <span style={{
       padding: '0.3rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700',
-      background: `₹{statusColors[status] || '#888'}20`,
+      background: `${statusColors[status] || '#888'}20`,
       color: statusColors[status] || '#888',
-      border: `1px solid ₹{statusColors[status] || '#888'}40`,
+      border: `1px solid ${statusColors[status] || '#888'}40`,
       textTransform: 'uppercase', letterSpacing: '0.05em',
     }}>
       {status}
@@ -95,7 +95,7 @@ export default function CustomerDashboard() {
   const cancelBooking = async (id) => {
     if (!window.confirm('Are you sure you want to cancel this bookingA')) return;
     try {
-      await axiosInstance.put(`/bookings/₹{id}/cancel`);
+      await axiosInstance.put(`/bookings/${id}/cancel`);
       toast.success('Booking cancelled');
       fetchBookings();
     } catch (err) {
@@ -164,7 +164,7 @@ export default function CustomerDashboard() {
                     &nbsp;·&nbsp; 💆 {b.staff?.name || 'Any Stylist'}
                   </div>
                   <div style={{ ...S.meta, marginTop: '0.4rem' }}>
-                    💰 ₹{b.totalAmount} — {b.paymentStatus === 'advance_paid' ? '30% advance paid' : b.paymentStatus === 'fully_paid' ? 'Fully paid' : 'Pay at salon'}
+                    💰 ${b.totalAmount} — {b.paymentStatus === 'advance_paid' ? '30% advance paid' : b.paymentStatus === 'fully_paid' ? 'Fully paid' : 'Pay at salon'}
                   </div>
                 </div>
                 <div style={S.actions}>

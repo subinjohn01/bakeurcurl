@@ -5,7 +5,7 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
   const glassCard = {
     background: 'rgba(251,246,238,0.05)',
     backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(168₹22,81,0.25)',
+    border: '1px solid rgba(168,122,81,0.25)',
     borderRadius: 16,
     padding: 24,
   };
@@ -38,7 +38,7 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
       {service && (
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(168₹22,81,0.2), rgba(74,47,30,0.2))',
+            background: 'linear-gradient(135deg, rgba(168,122,81,0.2), rgba(74,47,30,0.2))',
             borderRadius: 12,
             padding: '14px 16px',
             marginBottom: 20,
@@ -51,7 +51,7 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
             <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{service.name}</p>
             <p style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>{service.duration} minutes</p>
           </div>
-          <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>₹{service.price}</span>
+          <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>${service.price}</span>
         </div>
       )}
 
@@ -65,7 +65,7 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
       </div>
 
       {paymentOption && (
-        <div style={{ marginTop: 20, padding: '16px', background: 'rgba(232₹80₹60,0.1)', borderRadius: 12, border: '1px solid rgba(232₹80₹60,0.2)' }}>
+        <div style={{ marginTop: 20, padding: '16px', background: 'rgba(232,180,160,0.1)', borderRadius: 12, border: '1px solid rgba(232,180,160,0.2)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ color: 'rgba(251,246,238,0.7)', fontSize: 13 }}>Payment Option</span>
             <Badge status={paymentOption === 'stripe' ? 'confirmed' : 'pending'} label={paymentOption === 'stripe' ? 'Online Payment' : 'Pay at Salon'} />
@@ -74,11 +74,11 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>Service Total</span>
-                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>₹{service.price}</span>
+                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>${service.price}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px dashed rgba(251,246,238,0.1)' }}>
                 <span style={{ color: '#E8B4A0', fontSize: 14, fontWeight: 600 }}>30% Advance Due</span>
-                <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800 }}>₹{advanceAmount}</span>
+                <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800 }}>${advanceAmount}</span>
               </div>
             </>
           )}

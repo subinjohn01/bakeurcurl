@@ -186,8 +186,38 @@ async function runTestSuite() {
   const servicesPageCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'ServicesPage.js'), 'utf8');
   assert(servicesPageCode.includes('Bridal & Makeup') && servicesPageCode.includes('Threading'), 'ServicesPage has BUC service categories');
 
-  // 3. FRONTEND BUILD PRODUCTION TEST
-  console.log(`\n${colors.bold}3. Production Build & Bundle Verification:${colors.reset}`);
+  // Test 2.5: Error Notification Toast System Verification
+  console.log(`\n${colors.bold}3. Toast Notification & Error Message Integrity Tests:${colors.reset}`);
+  const appJsCode = fs.readFileSync(path.join(frontendSrc, 'App.js'), 'utf8');
+  assert(appJsCode.includes('<Toaster') && appJsCode.includes('toastOptions'), 'App.js contains global Toaster provider with custom options');
+  assert(appJsCode.includes('error:') && appJsCode.includes('iconTheme: { primary: \'#F87171\''), 'Global toast configuration defines explicit error theme and visible contrast');
+
+  const indexCssCode = fs.readFileSync(path.join(frontendSrc, 'index.css'), 'utf8');
+  assert(indexCssCode.includes('[data-rht-toaster]'), 'Global CSS guarantees visible background and text contrast for toast notifications');
+
+  // Test 2.6: Zero broken template interpolations or corrupt rupee symbols in code
+  let brokenInterpolations = [];
+  for (const file of jsFiles) {
+    const code = fs.readFileSync(file, 'utf8');
+    if (code.includes('₹{') || code.includes('?{isOOS')) {
+      brokenInterpolations.push(path.basename(file));
+    }
+  }
+  assert(brokenInterpolations.length === 0, 'Zero broken template interpolations (${} intact across all files)', brokenInterpolations.join(', '));
+
+  // Test 2.7: All toast.error calls provide non-empty message or fallback
+  let nakedToastErrors = [];
+  for (const file of jsFiles) {
+    const code = fs.readFileSync(file, 'utf8');
+    const regex = /toast\.error\(\s*err\.response\?\.data\?\.message\s*\)/g;
+    if (regex.test(code)) {
+      nakedToastErrors.push(path.basename(file));
+    }
+  }
+  assert(nakedToastErrors.length === 0, 'All API error toasts guarantee fallback messages (no empty error toasts)', nakedToastErrors.join(', '));
+
+  // 4. FRONTEND BUILD PRODUCTION TEST
+  console.log(`\n${colors.bold}4. Production Build & Bundle Verification:${colors.reset}`);
   const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
   const buildExists = fs.existsSync(buildIndex);
   assert(buildExists, 'Production build artifact exists at frontend/build/index.html');

@@ -57,7 +57,7 @@ const PaymentForm = ({ bookingId, amount, onSuccess, onSkip }) => {
         style={{
           background: 'rgba(251,246,238,0.05)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(168₹22,81,0.3)',
+          border: '1px solid rgba(168,122,81,0.3)',
           borderRadius: 14,
           padding: '20px 22px',
           marginBottom: 20,
@@ -92,7 +92,7 @@ const PaymentForm = ({ bookingId, amount, onSuccess, onSkip }) => {
           }}
         >
           <span style={{ color: 'rgba(251,246,238,0.6)', fontSize: 13 }}>Amount to charge (30% advance)</span>
-          <span style={{ color: '#E8B4A0', fontSize: 20, fontWeight: 800 }}>₹{amoun.toFixed(2)}</span>
+          <span style={{ color: '#E8B4A0', fontSize: 20, fontWeight: 800 }}>${amoun.toFixed(2)}</span>
         </div>
       </div>
 
@@ -104,7 +104,7 @@ const PaymentForm = ({ bookingId, amount, onSuccess, onSkip }) => {
           disabled={!stripe || !cardComplete}
           style={{ flex: 1 }}
         >
-          💳 Pay ₹{amoun.toFixed(2)} Now
+          💳 Pay ${amoun.toFixed(2)} Now
         </Button>
         {onSkip && (
           <Button

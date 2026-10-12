@@ -282,7 +282,7 @@ const BookingPage = () => {
                             {svc.duration} mins • {svc.category || 'Specialized'}
                           </p>
                         </div>
-                        <span style={{ color: '#F1D592', fontWeight: 800, fontSize: 18 }}>₹{svc.price}</span>
+                        <span style={{ color: '#F1D592', fontWeight: 800, fontSize: 18 }}>${svc.price}</span>
                         {isSelected && (
                           <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F1D592', color: '#18100B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, marginLeft: 10 }}>
                             ✓

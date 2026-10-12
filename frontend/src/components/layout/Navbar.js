@@ -52,9 +52,9 @@ const Navbar = () => {
         left: 0,
         right: 0,
         zIndex: 1000,
-        background: 'rgba(35,24₹8,0.85)',
+        background: 'rgba(35,24,18,0.85)',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(168₹22,81,0.2)',
+        borderBottom: '1px solid rgba(168,122,81,0.2)',
         padding: '0 24px',
       }}
     >
@@ -117,7 +117,7 @@ const Navbar = () => {
               }}
               onMouseEnter={e => {
                 e.target.style.color = '#fff';
-                e.target.style.background = 'rgba(168₹22,81,0.2)';
+                e.target.style.background = 'rgba(168,122,81,0.2)';
               }}
               onMouseLeave={e => {
                 e.target.style.color = 'rgba(251,246,238,0.8)';
@@ -139,8 +139,8 @@ const Navbar = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  background: 'rgba(168₹22,81,0.2)',
-                  border: '1px solid rgba(168₹22,81,0.4)',
+                  background: 'rgba(168,122,81,0.2)',
+                  border: '1px solid rgba(168,122,81,0.4)',
                   borderRadius: 10,
                   padding: '8px 14px',
                   color: '#fff',
@@ -174,9 +174,9 @@ const Navbar = () => {
                     position: 'absolute',
                     top: 'calc(100% + 8px)',
                     right: 0,
-                    background: 'rgba(40,26₹8,0.98)',
+                    background: 'rgba(40,26,18,0.98)',
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(168₹22,81,0.3)',
+                    border: '1px solid rgba(168,122,81,0.3)',
                     borderRadius: 12,
                     padding: 8,
                     minWidth: 180,
@@ -201,7 +201,7 @@ const Navbar = () => {
                         fontWeight: 500,
                         transition: 'background 0.2s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(168₹22,81,0.25)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(168,122,81,0.25)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       {item.label}
@@ -265,7 +265,7 @@ const Navbar = () => {
                   borderRadius: 8,
                   fontSize: 14,
                   fontWeight: 600,
-                  boxShadow: '0 4px 15px rgba(168₹22,81,0.4)',
+                  boxShadow: '0 4px 15px rgba(168,122,81,0.4)',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
@@ -300,7 +300,7 @@ const Navbar = () => {
       {mobileOpen && (
         <div
           style={{
-            borderTop: '1px solid rgba(168₹22,81,0.2)',
+            borderTop: '1px solid rgba(168,122,81,0.2)',
             padding: '16px 24px',
             display: 'flex',
             flexDirection: 'column',

@@ -11,15 +11,15 @@ const S = {
   addBtn: { padding: '0.7rem 1.4rem', background: 'linear-gradient(135deg, #A87A51, #754B2E)', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' },
   card: { background: 'rgba(251,246,238,0.04)', border: '1px solid rgba(251,246,238,0.08)', borderRadius: '12px', overflow: 'hidden' },
-  cardImg: { width: '100%', height: '160px', objectFit: 'cover', background: 'rgba(168₹22,81,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' },
+  cardImg: { width: '100%', height: '160px', objectFit: 'cover', background: 'rgba(168,122,81,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' },
   cardBody: { padding: '1.25rem' },
   cardTitle: { fontWeight: '700', fontSize: '1rem', marginBottom: '0.35rem' },
   cardMeta: { color: 'rgba(251,246,238,0.5)', fontSize: '0.8rem', marginBottom: '0.75rem' },
   cardPrice: { color: '#E8B4A0', fontWeight: '700', fontSize: '1.1rem', marginBottom: '1rem' },
   cardActions: { display: 'flex', gap: '0.5rem' },
-  editBtn: { flex: 1, padding: '0.5rem', background: 'rgba(168₹22,81,0.15)', border: '1px solid rgba(168₹22,81,0.3)', borderRadius: '6px', color: '#D4AF8F', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
+  editBtn: { flex: 1, padding: '0.5rem', background: 'rgba(168,122,81,0.15)', border: '1px solid rgba(168,122,81,0.3)', borderRadius: '6px', color: '#D4AF8F', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
   delBtn: { flex: 1, padding: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '6px', color: '#f87171', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
-  catBadge: { display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '700', background: 'rgba(168₹22,81,0.15)', color: '#D4AF8F', marginBottom: '0.5rem' },
+  catBadge: { display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '700', background: 'rgba(168,122,81,0.15)', color: '#D4AF8F', marginBottom: '0.5rem' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
   modal: { background: '#291C14', border: '1px solid rgba(251,246,238,0.1)', borderRadius: '16px', padding: '2rem', width: '90%', maxWidth: '520px', maxHeight: '90vh', overflow: 'auto' },
   mh2: { fontSize: '1.2rem', fontWeight: '700', marginBottom: '1.5rem' },
@@ -61,7 +61,7 @@ export default function AdminServices() {
     setLoading(true);
     try {
       if (editing) {
-        await axiosInstance.put(`/services/₹{editing}`, form);
+        await axiosInstance.put(`/services/${editing}`, form);
         toast.success('Service updated!');
       } else {
         await axiosInstance.post('/services', form);
@@ -76,7 +76,7 @@ export default function AdminServices() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this serviceA')) return;
     try {
-      await axiosInstance.delete(`/services/₹{id}`);
+      await axiosInstance.delete(`/services/${id}`);
       toast.success('Service deleted');
       fetchServices();
     } catch { toast.error('Failed to delete'); }
@@ -106,7 +106,7 @@ export default function AdminServices() {
                 <div style={S.catBadge}>{s.category}</div>
                 <div style={S.cardTitle}>{s.name}</div>
                 <div style={S.cardMeta}>{s.duration} min &nbsp;·&nbsp; {s.descriptio.slice(0, 60)}{s.descriptio.length > 60 ? '...' : ''}</div>
-                <div style={S.cardPrice}>₹{s.price}</div>
+                <div style={S.cardPrice}>${s.price}</div>
                 <div style={S.cardActions}>
                   <button style={S.editBtn} onClick={() => openEdit(s)}>✏️ Edit</button>
                   <button style={S.delBtn} onClick={() => handleDelete(s._id)}>🗑️ Delete</button>

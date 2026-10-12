@@ -50,7 +50,7 @@ const ProductsPage = () => {
     : products.filter(p => p.category === activeCategory);
 
   const handleInquire = (product) => {
-    toast.success(`Added "₹{product.name}" to inquiry! 💌`);
+    toast.success(`Added "${product.name}" to inquiry! 💌`);
   };
 
   return (
@@ -58,7 +58,7 @@ const ProductsPage = () => {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ display: 'inline-block', background: 'rgba(232₹80₹60,0.15)', border: '1px solid rgba(232₹80₹60,0.3)', borderRadius: 24, padding: '5px 16px', marginBottom: 20, fontSize: 13, color: '#E8B4A0', fontWeight: 500 }}>
+          <div style={{ display: 'inline-block', background: 'rgba(232,180,160,0.15)', border: '1px solid rgba(232,180,160,0.3)', borderRadius: 24, padding: '5px 16px', marginBottom: 20, fontSize: 13, color: '#E8B4A0', fontWeight: 500 }}>
             🛍️ Our Products
           </div>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 14 }}>
@@ -85,7 +85,7 @@ const ProductsPage = () => {
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: activeCategory === cat ? '0 4px 15px rgba(232₹80₹60,0.3)' : 'none',
+                boxShadow: activeCategory === cat ? '0 4px 15px rgba(232,180,160,0.3)' : 'none',
               }}
             >
               {cat}
@@ -116,8 +116,8 @@ const ProductsPage = () => {
                   onMouseEnter={e => {
                     if (!isOOS) {
                       e.currentTarget.style.transform = 'translateY(-5px)';
-                      e.currentTarget.style.boxShadow = '0 20px 50px rgba(232₹80₹60,0.15)';
-                      e.currentTarget.style.borderColor = 'rgba(232₹80₹60,0.3)';
+                      e.currentTarget.style.boxShadow = '0 20px 50px rgba(232,180,160,0.15)';
+                      e.currentTarget.style.borderColor = 'rgba(232,180,160,0.3)';
                     }
                   }}
                   onMouseLeave={e => {
@@ -130,7 +130,7 @@ const ProductsPage = () => {
                   <div
                     style={{
                       height: 200,
-                      background: 'linear-gradient(135deg, rgba(232₹80₹60,0.15), rgba(168₹22,81,0.1))',
+                      background: 'linear-gradient(135deg, rgba(232,180,160,0.15), rgba(168,122,81,0.1))',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -159,13 +159,13 @@ const ProductsPage = () => {
                     <p style={{ color: 'rgba(251,246,238,0.45)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>{product.description}</p>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>₹{product.price}</span>
+                      <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>${product.price}</span>
                       <button
                         onClick={() => !isOOS && handleInquire(product)}
                         disabled={isOOS}
                         style={{
-                          background: isOOS ? 'rgba(251,246,238,0.05)' : 'rgba(232₹80₹60,0.15)',
-                          border: `1px solid ₹{isOOS ? 'rgba(251,246,238,0.1)' : 'rgba(232₹80₹60,0.4)'}`,
+                          background: isOOS ? 'rgba(251,246,238,0.05)' : 'rgba(232,180,160,0.15)',
+                          border: `1px solid ${isOOS ? 'rgba(251,246,238,0.1)' : 'rgba(232,180,160,0.4)'}`,
                           color: isOOS ? 'rgba(251,246,238,0.3)' : '#E8B4A0',
                           padding: '9px 18px',
                           borderRadius: 10,
@@ -174,8 +174,8 @@ const ProductsPage = () => {
                           cursor: isOOS ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s',
                         }}
-                        onMouseEnter={e => { if (!isOOS) e.currentTarget.style.background = 'rgba(232₹80₹60,0.25)'; }}
-                        onMouseLeave={e => { if (!isOOS) e.currentTarget.style.background = 'rgba(232₹80₹60,0.15)'; }}
+                        onMouseEnter={e => { if (!isOOS) e.currentTarget.style.background = 'rgba(232,180,160,0.25)'; }}
+                        onMouseLeave={e => { if (!isOOS) e.currentTarget.style.background = 'rgba(232,180,160,0.15)'; }}
                       >
                         {isOOS ? 'Unavailable' : 'Inquire'}
                       </button>

@@ -22,7 +22,7 @@ const S = {
   meta: { color: 'rgba(251,246,238,0.5)', fontSize: '0.8rem' },
   actions: { display: 'flex', gap: '0.5rem' },
   btn: (color) => ({
-    padding: '0.4rem 0.9rem', background: `₹{color}20`, border: `1px solid ₹{color}40`,
+    padding: '0.4rem 0.9rem', background: `${color}20`, border: `1px solid ${color}40`,
     borderRadius: '6px', color, cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600',
   }),
   queryCard: {
@@ -32,7 +32,7 @@ const S = {
   queryName: { fontWeight: '700', marginBottom: '0.25rem' },
   queryMeta: { color: 'rgba(251,246,238,0.4)', fontSize: '0.8rem', marginBottom: '0.75rem' },
   queryMsg: { color: 'rgba(251,246,238,0.7)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1rem' },
-  replyBox: { background: 'rgba(168₹22,81,0.08)', border: '1px solid rgba(168₹22,81,0.2)', borderRadius: '8px', padding: '1rem' },
+  replyBox: { background: 'rgba(168,122,81,0.08)', border: '1px solid rgba(168,122,81,0.2)', borderRadius: '8px', padding: '1rem' },
   textarea: {
     width: '100%', minHeight: '80px', padding: '0.6rem', resize: 'vertical',
     background: 'rgba(251,246,238,0.06)', border: '1px solid rgba(251,246,238,0.12)',
@@ -50,7 +50,7 @@ const statusColors = { pending: '#F59E0B', confirmed: '#10B981', completed: '#8B
 function Badge({ status }) {
   const c = statusColors[status] || '#888';
   return (
-    <span style={{ padding: '0.25rem 0.65rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700', background: `₹{c}20`, color: c, border: `1px solid ₹{c}40`, textTransform: 'uppercase' }}>
+    <span style={{ padding: '0.25rem 0.65rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700', background: `${c}20`, color: c, border: `1px solid ${c}40`, textTransform: 'uppercase' }}>
       {status}
     </span>
   );
@@ -83,8 +83,8 @@ export default function StaffDashboard() {
 
   const updateStatus = async (id, status) => {
     try {
-      await axiosInstance.put(`/bookings/₹{id}/status`, { status });
-      toast.success(`Booking ₹{status}`);
+      await axiosInstance.put(`/bookings/${id}/status`, { status });
+      toast.success(`Booking ${status}`);
       fetchAll();
     } catch (err) {
       toast.error('Failed to update status');
@@ -93,9 +93,9 @@ export default function StaffDashboard() {
 
   const sendReply = async (queryId) => {
     const reply = replyText[queryId];
-    if (!repl.trim()) return toast.error('Reply cannot be empty');
+    if (!reply || !reply.trim()) return toast.error('Reply cannot be empty');
     try {
-      await axiosInstance.post(`/queries/₹{queryId}/reply`, { reply });
+      await axiosInstance.post(`/queries/${queryId}/reply`, { reply });
       toast.success('Reply sent!');
       setReplyText({ ...replyText, [queryId]: '' });
       fetchAll();

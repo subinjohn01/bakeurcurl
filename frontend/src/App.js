@@ -100,17 +100,35 @@ function App() {
         </div>
         <Toaster
           position="top-right"
+          gutter={12}
           toastOptions={{
+            duration: 4000,
             style: {
-              background: 'rgba(40,26₹8,0.95)',
-              color: '#fff',
-              border: '1px solid rgba(168₹22,81,0.3)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: 12,
+              background: '#231812',
+              color: '#FBF6EE',
+              border: '1.5px solid rgba(241,213,146,0.35)',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              fontSize: '14px',
+              fontWeight: 500,
+              boxShadow: '0 12px 35px rgba(0,0,0,0.7)',
               fontFamily: "'Inter', sans-serif",
             },
-            success: { iconTheme: { primary: '#34D399', secondary: '#231812' } },
-            error: { iconTheme: { primary: '#F87171', secondary: '#231812' } },
+            success: {
+              style: {
+                border: '1.5px solid rgba(52,211,153,0.5)',
+              },
+              iconTheme: { primary: '#34D399', secondary: '#231812' },
+            },
+            error: {
+              duration: 5000,
+              style: {
+                background: '#2A1713',
+                color: '#FFF5F5',
+                border: '1.5px solid rgba(248,113,113,0.5)',
+              },
+              iconTheme: { primary: '#F87171', secondary: '#2A1713' },
+            },
           }}
         />
       </BrowserRouter>
