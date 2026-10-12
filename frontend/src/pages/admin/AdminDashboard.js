@@ -8,8 +8,19 @@ import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
 const S = {
   page: { minHeight: '100vh', background: '#231812', display: 'flex', fontFamily: "'Inter', sans-serif", color: '#fff' },
   sidebar: {
-    width: '240px', background: 'rgba(251,246,238,0.03)', borderRight: '1px solid rgba(251,246,238,0.06)',
-    padding: '2rem 1rem', flexShrink: 0, display: 'flex', flexDirection: 'column',
+    width: '240px',
+    background: 'rgba(251,246,238,0.03)',
+    borderRight: '1px solid rgba(251,246,238,0.06)',
+    padding: '2rem 1rem 1.5rem',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'sticky',
+    top: 0,
+    height: '100vh',
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+    zIndex: 50,
   },
   sidebarLogo: {
     fontSize: '1.4rem', fontWeight: '800', fontFamily: "'Playfair Display', serif",
@@ -79,14 +90,49 @@ export function AdminSidebarNav({ active }) {
           <div style={S.sidebarSub}>Admin Panel</div>
         </div>
       </div>
-      {navItems.map((n) => (
-        <Link key={n.to} to={n.to} style={S.navLink(active === n.to)}>
-          {n.label}
-        </Link>
-      ))}
-      <div style={{ marginTop: 'auto', color: 'rgba(251,246,238,0.3)', fontSize: '0.75rem' }}>
-        <Link to="/" style={{ color: 'rgba(251,246,238,0.35)', textDecoration: 'none' }}>
-          ← Back to Site
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {navItems.map((n) => (
+          <Link key={n.to} to={n.to} style={S.navLink(active === n.to)}>
+            {n.label}
+          </Link>
+        ))}
+      </div>
+      <div
+        style={{
+          marginTop: 'auto',
+          paddingTop: '1rem',
+          borderTop: '1px solid rgba(251,246,238,0.06)',
+          position: 'sticky',
+          bottom: 0,
+          background: '#231812',
+        }}
+      >
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'rgba(251,246,238,0.05)',
+            border: '1px solid rgba(241,213,146,0.2)',
+            color: '#F1D592',
+            textDecoration: 'none',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(241,213,146,0.15)';
+            e.currentTarget.style.borderColor = 'rgba(241,213,146,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(251,246,238,0.05)';
+            e.currentTarget.style.borderColor = 'rgba(241,213,146,0.2)';
+          }}
+        >
+          <span>←</span> Back to Main Site
         </Link>
       </div>
     </div>
