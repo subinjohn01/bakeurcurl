@@ -23,11 +23,19 @@ const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Optional auth helper: decodes JWT into req.user if Bearer token present
+const optionalAuth = (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    return protect(req, res, next);
+  }
+  next();
+};
+
 // Public / Cron — must come before /:id to avoid conflict
 router.get('/available-slots', getAvailableSlots);
 router.route('/send-daily-reminders')
-  .post(sendDailyReminders)
-  .get(sendDailyReminders);
+  .post(optionalAuth, sendDailyReminders)
+  .get(optionalAuth, sendDailyReminders);
 
 // Auth — customer/staff/admin
 router.post('/', createBooking); // Supports both guest and auth

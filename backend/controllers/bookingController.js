@@ -508,12 +508,12 @@ const sendDailyReminders = async (req, res, next) => {
   try {
     const providedSecret = req.headers['x-cron-secret'] || req.query.secret;
     const validSecret = process.env.CRON_SECRET || 'buc_cron_secret_2024';
-    const isAdmin = req.user && req.user.role === 'admin';
+    const isStaffOrAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'staff');
 
-    if (!isAdmin && providedSecret !== validSecret) {
-      return res.status(401).json({
+    if (!isStaffOrAdmin && providedSecret !== validSecret) {
+      return res.status(403).json({
         success: false,
-        message: 'Unauthorized cron trigger. Provide valid secret key or admin authorization.',
+        message: 'Forbidden. Provide valid secret key or login as an administrator or staff member.',
       });
     }
 

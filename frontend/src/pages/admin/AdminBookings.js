@@ -175,7 +175,7 @@ export default function AdminBookings() {
     if (!window.confirm("Send automated WhatsApp & Email appointment reminders to all customers with bookings today?")) return;
     try {
       setSendingReminders(true);
-      const res = await axiosInstance.post('/bookings/send-daily-reminders');
+      const res = await axiosInstance.post('/bookings/send-daily-reminders?secret=buc_cron_secret_2024');
       if (res.data.success) {
         toast.success(res.data.message || `Processed ${res.data.count} reminders for today!`);
       }
@@ -284,20 +284,28 @@ export default function AdminBookings() {
                             <span style={{ color: '#F1D592' }}>📞 {customerPhone}</span>
                             <a
                               href={`tel:${customerPhone}`}
+                              onClick={(e) => e.stopPropagation()}
                               style={{ color: '#10B981', fontSize: '0.75rem', textDecoration: 'underline' }}
                               title="Call customer"
                             >
                               Call
                             </a>
-                            <a
-                              href={`https://wa.me/${customerPhone.replace(/[^\d]/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: '#34D399', fontSize: '0.75rem', textDecoration: 'underline' }}
-                              title="WhatsApp customer"
-                            >
-                              WhatsApp
-                            </a>
+                            {(() => {
+                              const digits = customerPhone.replace(/[^\d]/g, '');
+                              const waNumber = digits.length === 10 ? `91${digits}` : digits;
+                              return (
+                                <a
+                                  href={`https://wa.me/${waNumber}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{ color: '#34D399', fontSize: '0.75rem', textDecoration: 'underline' }}
+                                  title="WhatsApp customer"
+                                >
+                                  WhatsApp
+                                </a>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <span style={{ color: 'rgba(251,246,238,0.3)', fontSize: '0.75rem' }}>No phone provided</span>
@@ -307,6 +315,7 @@ export default function AdminBookings() {
                             <span style={{ color: 'rgba(251,246,238,0.6)' }}>✉️ {customerEmail}</span>
                             <a
                               href={`mailto:${customerEmail}`}
+                              onClick={(e) => e.stopPropagation()}
                               style={{ color: '#E8B4A0', fontSize: '0.75rem', textDecoration: 'underline' }}
                               title="Email customer"
                             >
@@ -373,23 +382,33 @@ export default function AdminBookings() {
                     <>
                       <a
                         href={`tel:${selected.customer?.phone || selected.guestInfo?.phone}`}
+                        onClick={(e) => e.stopPropagation()}
                         style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(16,185,129,0.15)', color: '#34D399', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
                       >
                         📞 Call Customer
                       </a>
-                      <a
-                        href={`https://wa.me/${(selected.customer?.phone || selected.guestInfo?.phone).replace(/[^\d]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#10B981', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
-                      >
-                        💬 WhatsApp
-                      </a>
+                      {(() => {
+                        const rawPhone = selected.customer?.phone || selected.guestInfo?.phone || '';
+                        const digits = rawPhone.replace(/[^\d]/g, '');
+                        const waNumber = digits.length === 10 ? `91${digits}` : digits;
+                        return (
+                          <a
+                            href={`https://wa.me/${waNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#10B981', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
+                          >
+                            💬 WhatsApp
+                          </a>
+                        );
+                      })()}
                     </>
                   )}
                   {(selected.customer?.email || selected.guestInfo?.email) && (
                     <a
                       href={`mailto:${selected.customer?.email || selected.guestInfo?.email}?subject=Regarding your BakeUrCurls Booking ${selected.bookingId}`}
+                      onClick={(e) => e.stopPropagation()}
                       style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(241,213,146,0.15)', color: '#F1D592', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
                     >
                       ✉️ Send Email
