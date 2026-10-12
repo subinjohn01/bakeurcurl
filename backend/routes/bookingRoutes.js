@@ -19,6 +19,7 @@ const {
   cancelBooking,
   getAvailableSlots,
   sendDailyReminders,
+  getPublicStats,
 } = require('../controllers/bookingController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -33,6 +34,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Public / Cron — must come before /:id to avoid conflict
+router.get('/public-stats', getPublicStats);
 router.get('/available-slots', getAvailableSlots);
 router.route('/send-daily-reminders')
   .post(optionalAuth, sendDailyReminders)

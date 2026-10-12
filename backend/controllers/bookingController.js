@@ -716,6 +716,29 @@ const sendDailyReminders = async (req, res, next) => {
   }
 };
 
+// ─── getPublicStats ───────────────────────────────────────────────────────────
+/**
+ * @desc    Get public salon statistics (total bookings, active staff, services)
+ * @route   GET /api/bookings/public-stats
+ * @access  Public
+ */
+const getPublicStats = async (req, res, next) => {
+  try {
+    const totalBookings = await Booking.countDocuments();
+    const totalStaff = await User.countDocuments({ role: 'staff', isActive: true });
+    const totalServices = await Service.countDocuments({ isActive: true });
+
+    res.status(200).json({
+      success: true,
+      totalBookings,
+      totalStaff,
+      totalServices,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createBooking,
   getBookings,
@@ -725,4 +748,5 @@ module.exports = {
   cancelBooking,
   getAvailableSlots,
   sendDailyReminders,
+  getPublicStats,
 };

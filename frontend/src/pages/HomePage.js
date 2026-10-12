@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axios';
 
 // ── Inline style helpers ─────────────────────────────────────────────────────
 const S = {
@@ -115,6 +116,31 @@ const featuredServices = [
 const HomePage = () => {
   const navigate = useNavigate();
   const heroRef = useRef();
+
+  const [stats, setStats] = useState({
+    bookingsCount: 0,
+    stylistsCount: 0,
+  });
+
+  useEffect(() => {
+    // Fetch public stats for real-time dynamic counter
+    axiosInstance.get('/bookings/public-stats').then(res => {
+      if (res.data) {
+        setStats({
+          bookingsCount: res.data.totalBookings || 0,
+          stylistsCount: res.data.totalStaff || 0,
+        });
+      }
+    }).catch(() => {
+      // Fallback: try fetching staff list count
+      axiosInstance.get('/staff').then(r => {
+        const list = Array.isArray(r.data?.staff) ? r.data.staff : (Array.isArray(r.data?.data) ? r.data.data : []);
+        if (list.length) {
+          setStats(p => ({ ...p, stylistsCount: list.length }));
+        }
+      }).catch(() => {});
+    });
+  }, []);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -256,7 +282,11 @@ const HomePage = () => {
 
             {/* Stats */}
             <div style={{ display: 'flex', gap: 32, marginTop: 44, flexWrap: 'wrap' }}>
-              {[['500+', 'Happy Clients'], ['15+', 'Expert Stylists'], ['10yr', 'Experience']].map(([v, l]) => (
+              {[
+                [stats.bookingsCount > 0 ? `${stats.bookingsCount}+` : '50+', 'Happy Clients'],
+                [stats.stylistsCount > 0 ? `${stats.stylistsCount}` : '2', 'Expert Stylists'],
+                ['100%', 'CG Friendly'],
+              ].map(([v, l]) => (
                 <div key={l}>
                   <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{v}</div>
                   <div style={{ fontSize: 13, color: 'rgba(251,246,238,0.45)', marginTop: 4 }}>{l}</div>
