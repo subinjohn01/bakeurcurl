@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
 
 const S = {
   page: { minHeight: '100vh', background: '#231812', display: 'flex', fontFamily: "'Inter', sans-serif", color: '#fff' },
@@ -95,6 +96,7 @@ export function AdminSidebarNav({ active }) {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ todayBookings: 0, pending: 0, confirmed: 0, newQueries: 0 });
+  const [allBookings, setAllBookings] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -206,6 +208,7 @@ export default function AdminDashboard() {
           confirmed: all.filter((b) => b.status === 'confirmed').length,
           newQueries: queries.filter((q) => q.status === 'new').length,
         });
+        setAllBookings(all);
         setRecentBookings(all.slice(0, 8));
       } catch {
         toast.error('Failed to load stats');
@@ -215,6 +218,52 @@ export default function AdminDashboard() {
     };
     fetch();
   }, []);
+
+  const handleExportCSV = () => {
+    const dataToExport = allBookings.length ? allBookings : recentBookings;
+    if (!dataToExport.length) return toast.error('No bookings to export');
+    const headers = ['Booking ID', 'Customer Name', 'Phone', 'Service', 'Date', 'Time Slot', 'Total Amount', 'Status', 'Payment Status'];
+    const rows = dataToExport.map((b) => [
+      b.bookingId || b._id,
+      b.customer?.name || b.guestInfo?.name || 'Guest',
+      b.customer?.phone || b.guestInfo?.phone || 'N/A',
+      b.service?.name || 'Service',
+      new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      b.timeSlot || '—',
+      `₹${b.totalAmount || 0}`,
+      (b.status || 'pending').toUpperCase(),
+      (b.paymentStatus || 'unpaid').toUpperCase(),
+    ]);
+    exportToCSV('BakeUrCurls_Dashboard_Summary', headers, rows);
+    toast.success('Dashboard data exported to Excel! 📊');
+  };
+
+  const handleExportPDF = () => {
+    const dataToExport = allBookings.length ? allBookings : recentBookings;
+    if (!dataToExport.length) return toast.error('No bookings to export');
+    const columns = ['Booking ID', 'Customer', 'Service', 'Schedule', 'Amount', 'Status'];
+    const data = dataToExport.map((b) => [
+      b.bookingId || b._id?.slice(-8),
+      b.customer?.name || b.guestInfo?.name || 'Guest',
+      b.service?.name || 'Service',
+      `${new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${b.timeSlot}`,
+      `₹${b.totalAmount || 0}`,
+      (b.status || 'pending').toUpperCase(),
+    ]);
+    const summaryStats = [
+      { label: "Today's Bookings", value: stats.todayBookings },
+      { label: 'Pending Confirmations', value: stats.pending },
+      { label: 'Confirmed Appointments', value: stats.confirmed },
+      { label: 'New Customer Queries', value: stats.newQueries },
+    ];
+    exportToPDF({
+      title: 'Executive Salon Overview & Activity Report',
+      subtitle: 'Key salon metrics and booking records',
+      columns,
+      data,
+      summaryStats,
+    });
+  };
 
   const statCards = [
     { label: "Today's Bookings", value: stats.todayBookings, color: '#A87A51' },
@@ -227,31 +276,71 @@ export default function AdminDashboard() {
     <div style={S.page}>
       <AdminSidebarNav active="/admin" />
       <div style={S.content}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: "'Playfair Display', serif", color: '#F1D592' }}>
             Overview Dashboard
           </h1>
-          <button
-            onClick={() => {
-              setAdminEmail(user?.email || 'admin@bakeurcurl.com');
-              setShowPasswordModal(true);
-            }}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 8,
-              background: 'rgba(212,175,55,0.15)',
-              border: '1px solid rgba(212,175,55,0.4)',
-              color: '#F1D592',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            🔑 Reset / Change Password
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleExportCSV}
+              style={{
+                padding: '9px 15px',
+                borderRadius: 8,
+                background: 'rgba(251,246,238,0.06)',
+                border: '1px solid rgba(241,213,146,0.3)',
+                color: '#F1D592',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              📊 Export to Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              style={{
+                padding: '9px 15px',
+                borderRadius: 8,
+                background: 'rgba(251,246,238,0.06)',
+                border: '1px solid rgba(241,213,146,0.3)',
+                color: '#F1D592',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.2s',
+              }}
+            >
+              📄 Export to PDF
+            </button>
+            <button
+              onClick={() => {
+                setAdminEmail(user?.email || 'admin@bakeurcurl.com');
+                setShowPasswordModal(true);
+              }}
+              style={{
+                padding: '9px 15px',
+                borderRadius: 8,
+                background: 'rgba(212,175,55,0.15)',
+                border: '1px solid rgba(212,175,55,0.4)',
+                color: '#F1D592',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              🔑 Change Password
+            </button>
+          </div>
         </div>
 
         <div style={S.statsRow}>

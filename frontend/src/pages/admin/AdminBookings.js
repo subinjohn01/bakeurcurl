@@ -1,12 +1,15 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminSidebarNav } from './AdminDashboard';
 import axiosInstance from '../../api/axios';
 import toast from 'react-hot-toast';
 
+import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
+
 const S = {
   page: { minHeight: '100vh', background: '#231812', display: 'flex', fontFamily: "'Inter', sans-serif", color: '#fff' },
   content: { flex: 1, padding: '2rem', overflow: 'auto' },
-  h1: { fontSize: '1.6rem', fontWeight: '800', marginBottom: '1.5rem', fontFamily: "'Playfair Display', serif" },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' },
+  h1: { fontSize: '1.6rem', fontWeight: '800', fontFamily: "'Playfair Display', serif" },
   toolbar: { display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' },
   select: {
     padding: '0.6rem 1rem', background: 'rgba(251,246,238,0.06)', border: '1px solid rgba(251,246,238,0.12)',
@@ -16,13 +19,27 @@ const S = {
     padding: '0.6rem 1rem', background: 'rgba(251,246,238,0.06)', border: '1px solid rgba(251,246,238,0.12)',
     borderRadius: '8px', color: '#fff', fontSize: '0.875rem', outline: 'none',
   },
+  exportBtn: {
+    padding: '0.55rem 1rem',
+    borderRadius: '8px',
+    border: '1px solid rgba(241,213,146,0.3)',
+    background: 'rgba(251,246,238,0.06)',
+    color: '#F1D592',
+    fontWeight: '600',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s',
+  },
   tableWrap: { background: 'rgba(251,246,238,0.03)', border: '1px solid rgba(251,246,238,0.07)', borderRadius: '12px', overflow: 'hidden' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { textAlign: 'left', padding: '0.75rem 1rem', color: 'rgba(251,246,238,0.4)', fontSize: '0.75rem', textTransform: 'uppercase', borderBottom: '1px solid rgba(251,246,238,0.07)' },
   td: { padding: '0.85rem 1rem', borderBottom: '1px solid rgba(251,246,238,0.05)', fontSize: '0.85rem', verticalAlign: 'middle' },
   actionBtn: (color) => ({
     padding: '0.35rem 0.75rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600',
-    background: `₹{color}20`, color, marginLeft: '0.4rem',
+    background: `${color}20`, color, marginLeft: '0.4rem',
   }),
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
@@ -49,7 +66,7 @@ const paymentColors = { unpaid: '#9CA3AF', advance_paid: '#F59E0B', fully_paid: 
 
 function Badge({ s, colorMap }) {
   const c = colorMap[s] || '#888';
-  return <span style={{ padding: '0.2rem 0.65rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '700', background: `₹{c}20`, color: c, textTransform: 'uppercase' }}>{s.replace('_', ' ')}</span>;
+  return <span style={{ padding: '0.2rem 0.65rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '700', background: `${c}20`, color: c, textTransform: 'uppercase' }}>{(s || '').replace('_', ' ')}</span>;
 }
 
 export default function AdminBookings() {
@@ -65,7 +82,7 @@ export default function AdminBookings() {
     let f = bookings;
     if (filter !== 'all') f = f.filter(b => b.status === filter);
     if (search) f = f.filter(b =>
-      b.bookingI.toLowerCase().includes(search.toLowerCase()) ||
+      (b.bookingId || '').toLowerCase().includes(search.toLowerCase()) ||
       (b.customer?.name || b.guestInfo?.name || '').toLowerCase().includes(search.toLowerCase())
     );
     setFiltered(f);
@@ -74,25 +91,94 @@ export default function AdminBookings() {
   const fetchBookings = async () => {
     try {
       const res = await axiosInstance.get('/bookings');
-      setBookings(res.data.data || []);
+      setBookings(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch { toast.error('Failed to load bookings'); }
     finally { setLoading(false); }
   };
 
   const updateStatus = async (id, status) => {
     try {
-      await axiosInstance.put(`/bookings/₹{id}/status`, { status });
-      toast.success(`Booking ₹{status}`);
+      await axiosInstance.put(`/bookings/${id}/status`, { status });
+      toast.success(`Booking ${status}`);
       setSelected(null);
       fetchBookings();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  };
+
+  const handleExportCSV = () => {
+    if (!filtered.length) return toast.error('No bookings to export');
+    const headers = ['Booking ID', 'Customer Name', 'Customer Email', 'Customer Phone', 'Service', 'Stylist', 'Date', 'Time Slot', 'Total Amount', 'Advance Paid', 'Payment Status', 'Booking Status'];
+    const rows = filtered.map((b) => [
+      b.bookingId,
+      b.customer?.name || b.guestInfo?.name || 'Guest',
+      b.customer?.email || b.guestInfo?.email || 'N/A',
+      b.customer?.phone || b.guestInfo?.phone || 'N/A',
+      b.service?.name || 'Service',
+      b.staff?.name || 'Any Stylist',
+      new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      b.timeSlot,
+      b.totalAmount,
+      b.advanceAmount || 0,
+      b.paymentStatus,
+      b.status,
+    ]);
+    exportToCSV('BakeUrCurls_Bookings_Report', headers, rows);
+    toast.success('Bookings exported to Excel (CSV)! 📊');
+  };
+
+  const handleExportPDF = () => {
+    if (!filtered.length) return toast.error('No bookings to export');
+    const columns = ['Booking ID', 'Customer', 'Service', 'Date & Time', 'Amount', 'Payment', 'Status'];
+    const data = filtered.map((b) => [
+      b.bookingId,
+      `${b.customer?.name || b.guestInfo?.name || 'Guest'}\n${b.customer?.phone || b.guestInfo?.phone || ''}`,
+      b.service?.name || 'Service',
+      `${new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}\n${b.timeSlot}`,
+      `₹${b.totalAmount}`,
+      (b.paymentStatus || '').replace('_', ' ').toUpperCase(),
+      (b.status || '').toUpperCase(),
+    ]);
+
+    const totalRevenue = filtered.reduce((acc, b) => acc + (Number(b.totalAmount) || 0), 0);
+    const summaryStats = [
+      { label: 'Total Bookings', value: filtered.length },
+      { label: 'Confirmed', value: filtered.filter((b) => b.status === 'confirmed').length },
+      { label: 'Pending', value: filtered.filter((b) => b.status === 'pending').length },
+      { label: 'Total Value', value: `₹${totalRevenue.toLocaleString('en-IN')}` },
+    ];
+
+    exportToPDF({
+      title: 'Salon Bookings & Appointments Report',
+      subtitle: `Filtered: ${filter.toUpperCase()} | Total Count: ${filtered.length}`,
+      columns,
+      data,
+      summaryStats,
+    });
   };
 
   return (
     <div style={S.page}>
       <AdminSidebarNav active="/admin/bookings" />
       <div style={S.content}>
-        <h1 style={S.h1}>Manage Bookings</h1>
+        <div style={S.header}>
+          <div>
+            <h1 style={S.h1}>Manage Bookings</h1>
+            <span style={{ color: 'rgba(251,246,238,0.45)', fontSize: '0.875rem' }}>
+              {filtered.length} booking records found
+            </span>
+          </div>
+
+          {/* Export Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={handleExportCSV} style={S.exportBtn}>
+              📊 Export to Excel
+            </button>
+            <button onClick={handleExportPDF} style={S.exportBtn}>
+              📄 Export to PDF
+            </button>
+          </div>
+        </div>
+
         <div style={S.toolbar}>
           <input style={S.input} placeholder="🔍 Search by ID or name..." value={search} onChange={e => setSearch(e.target.value)} />
           <select style={S.select} value={filter} onChange={e => setFilter(e.target.value)}>
@@ -116,7 +202,7 @@ export default function AdminBookings() {
                 <tr key={b._id}>
                   <td style={{ ...S.td, color: '#E8B4A0', fontWeight: '700' }}>{b.bookingId}</td>
                   <td style={S.td}>{b.customer?.name || b.guestInfo?.name || 'Guest'}</td>
-                  <td style={S.td}>{b.servic.name}</td>
+                  <td style={S.td}>{b.service?.name || 'Service'}</td>
                   <td style={S.td}>{new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {b.timeSlot}</td>
                   <td style={S.td}>₹{b.totalAmount}</td>
                   <td style={S.td}><Badge s={b.paymentStatus} colorMap={paymentColors} /></td>
