@@ -523,14 +523,17 @@ export default function AdminBookings() {
                             {(() => {
                               const digits = customerPhone.replace(/[^\d]/g, '');
                               const waNumber = digits.length === 10 ? `91${digits}` : digits;
+                              const reminderText = encodeURIComponent(
+                                `Hello ${customerName}! ✨ Friendly reminder of your appointment at *BakeUrCurls Salon*:\n\n✂️ *Service:* ${b.service?.name || 'Hair Service'}\n🕒 *Time:* ${b.timeSlot}\n📅 *Date:* ${new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n👤 *Stylist:* ${b.staff?.name || 'Assigned Stylist'}\n🔖 *Booking ID:* #${b.bookingId}\n\nWe look forward to seeing your gorgeous curls! 🌀💫`
+                              );
                               return (
                                 <a
-                                  href={`https://wa.me/${waNumber}`}
+                                  href={`https://wa.me/${waNumber}?text=${reminderText}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   style={{ color: '#34D399', fontSize: '0.75rem', textDecoration: 'underline' }}
-                                  title="WhatsApp customer"
+                                  title="Send WhatsApp appointment reminder with pre-filled message"
                                 >
                                   WhatsApp
                                 </a>
@@ -1033,13 +1036,18 @@ export default function AdminBookings() {
                         const rawPhone = selected.customer?.phone || selected.guestInfo?.phone || '';
                         const digits = rawPhone.replace(/[^\d]/g, '');
                         const waNumber = digits.length === 10 ? `91${digits}` : digits;
+                        const cName = selected.customer?.name || selected.guestInfo?.name || 'Customer';
+                        const reminderText = encodeURIComponent(
+                          `Hello ${cName}! ✨ Friendly reminder of your appointment at *BakeUrCurls Salon*:\n\n✂️ *Service:* ${selected.service?.name || 'Hair Service'}\n🕒 *Time:* ${selected.timeSlot}\n📅 *Date:* ${new Date(selected.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n👤 *Stylist:* ${selected.staff?.name || 'Assigned Stylist'}\n🔖 *Booking ID:* #${selected.bookingId}\n\nWe look forward to seeing your gorgeous curls! 🌀💫`
+                        );
                         return (
                           <a
-                            href={`https://wa.me/${waNumber}`}
+                            href={`https://wa.me/${waNumber}?text=${reminderText}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#10B981', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
+                            title="Open WhatsApp chat with pre-filled appointment reminder"
                           >
                             💬 WhatsApp
                           </a>

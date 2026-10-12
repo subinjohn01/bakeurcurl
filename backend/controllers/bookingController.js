@@ -696,9 +696,17 @@ const sendDailyReminders = async (req, res, next) => {
       });
     }
 
+    const hasLiveGateway = Boolean(
+      (process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN) ||
+      (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+    );
+
     res.status(200).json({
       success: true,
-      message: `Successfully processed ${bookings.length} appointment reminders for today.`,
+      hasLiveGateway,
+      message: hasLiveGateway
+        ? `Successfully sent ${bookings.length} automated WhatsApp reminders via Cloud API!`
+        : `Processed ${bookings.length} reminders! (Logged in server outbox — add WhatsApp Cloud API credentials in .env to deliver automatically to mobile devices). You can also click the green WhatsApp button next to any booking to send with one click.`,
       date: targetDate.toISOString().split('T')[0],
       count: bookings.length,
       reminders: reminderResults,
