@@ -149,7 +149,21 @@ img {
 }
 
 /* React Hot Toast Global Styling & Visibility Guarantee */
+[data-rht-toaster] {
+  pointer-events: none !important;
+}
+
 [data-rht-toaster] > div {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+/* The actual toast pill/card */
+[data-rht-toaster] [role="status"],
+[data-rht-toaster] [role="alert"],
+[data-rht-toaster] > div > div {
   background: #231812 !important;
   color: #FBF6EE !important;
   border: 1px solid rgba(241, 213, 146, 0.35) !important;
@@ -158,8 +172,6 @@ img {
   font-family: 'Inter', sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
+  pointer-events: auto !important;
 }
 
-[data-rht-toaster] div[role="status"] {
-  color: #FBF6EE !important;
-}

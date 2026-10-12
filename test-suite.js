@@ -194,6 +194,7 @@ async function runTestSuite() {
 
   const indexCssCode = fs.readFileSync(path.join(frontendSrc, 'index.css'), 'utf8');
   assert(indexCssCode.includes('[data-rht-toaster]'), 'Global CSS guarantees visible background and text contrast for toast notifications');
+  assert(indexCssCode.includes('[data-rht-toaster] > div') && indexCssCode.includes('pointer-events: none !important'), 'Toaster full-width wrapper has pointer-events: none to prevent blocking button clicks');
 
   // Test 2.6: Zero broken template interpolations or corrupt rupee symbols in code
   let brokenInterpolations = [];
