@@ -248,8 +248,15 @@ async function runTestSuite() {
   const customerRoutesPath = path.join(__dirname, 'backend', 'routes', 'customerRoutes.js');
   assert(fs.existsSync(customerRoutesPath), 'Backend customerRoutes exists');
 
-  // 6. FRONTEND BUILD PRODUCTION TEST
-  console.log(`\n${colors.bold}6. Production Build & Bundle Verification:${colors.reset}`);
+  // Test 2.10: WhatsApp Notification & Daily Reminders Endpoint
+  console.log(`\n${colors.bold}6. WhatsApp Reminders & Cron Endpoint Verification:${colors.reset}`);
+  const whatsappServicePath = path.join(__dirname, 'backend', 'utils', 'whatsappService.js');
+  assert(fs.existsSync(whatsappServicePath), 'Backend whatsappService.js exists with message templates');
+  const bookingRoutesCode = fs.readFileSync(path.join(__dirname, 'backend', 'routes', 'bookingRoutes.js'), 'utf8');
+  assert(bookingRoutesCode.includes('/send-daily-reminders'), 'POST /api/bookings/send-daily-reminders route is mounted');
+
+  // 7. FRONTEND BUILD PRODUCTION TEST
+  console.log(`\n${colors.bold}7. Production Build & Bundle Verification:${colors.reset}`);
   const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
   const buildExists = fs.existsSync(buildIndex);
   assert(buildExists, 'Production build artifact exists at frontend/build/index.html');

@@ -169,6 +169,23 @@ export default function AdminBookings() {
     });
   };
 
+  const [sendingReminders, setSendingReminders] = useState(false);
+
+  const handleSendDailyReminders = async () => {
+    if (!window.confirm("Send automated WhatsApp & Email appointment reminders to all customers with bookings today?")) return;
+    try {
+      setSendingReminders(true);
+      const res = await axiosInstance.post('/bookings/send-daily-reminders');
+      if (res.data.success) {
+        toast.success(res.data.message || `Processed ${res.data.count} reminders for today!`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send daily reminders');
+    } finally {
+      setSendingReminders(false);
+    }
+  };
+
   return (
     <div style={S.page}>
       <AdminSidebarNav active="/admin/bookings" />
@@ -181,8 +198,21 @@ export default function AdminBookings() {
             </span>
           </div>
 
-          {/* Export Action Buttons */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleSendDailyReminders}
+              disabled={sendingReminders}
+              style={{
+                ...S.exportBtn,
+                background: 'rgba(52,211,153,0.12)',
+                border: '1px solid rgba(52,211,153,0.3)',
+                color: '#34D399',
+              }}
+              title="Trigger automated WhatsApp and email reminders to all customers having appointments today"
+            >
+              {sendingReminders ? 'Sending...' : '🔔 Send Today’s Reminders (WhatsApp)'}
+            </button>
             <button onClick={handleExportCSV} style={S.exportBtn}>
               📊 Export to Excel
             </button>

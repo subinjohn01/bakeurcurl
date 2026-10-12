@@ -17,13 +17,17 @@ const {
   updateBookingStatus,
   cancelBooking,
   getAvailableSlots,
+  sendDailyReminders,
 } = require('../controllers/bookingController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Public — must come before /:id to avoid conflict
+// Public / Cron — must come before /:id to avoid conflict
 router.get('/available-slots', getAvailableSlots);
+router.route('/send-daily-reminders')
+  .post(sendDailyReminders)
+  .get(sendDailyReminders);
 
 // Auth — customer/staff/admin
 router.post('/', createBooking); // Supports both guest and auth

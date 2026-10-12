@@ -14,7 +14,15 @@ const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
 const Coupon = require('../models/Coupon');
-const { sendBookingConfirmation, sendBookingCancellation } = require('../utils/emailService');
+const {
+  sendBookingConfirmation,
+  sendBookingCancellation,
+  sendAppointmentReminder,
+} = require('../utils/emailService');
+const {
+  sendAppointmentReminderWhatsApp,
+  sendBookingConfirmationWhatsApp,
+} = require('../utils/whatsappService');
 
 // ─── Business Logic Constants ─────────────────────────────────────────────────
 
@@ -178,11 +186,35 @@ const createBooking = async (req, res, next) => {
 
     // Send confirmation email (non-blocking)
     try {
-      const recipientEmail = req.user ? req.user.email : guestEmail;
-      const recipientName = req.user ? req.user.name : guestName;
+      const recipientEmail = req.user ? req.user.email : gEmail;
+      const recipientName = req.user ? req.user.name : gName;
       await sendBookingConfirmation(recipientEmail, recipientName, populatedBooking);
     } catch (emailErr) {
       console.error('Email send failed (non-fatal):', emailErr.message);
+    }
+
+    // Send WhatsApp confirmation (non-blocking)
+    try {
+      const recipientPhone = req.user ? req.user.phone : gPhone;
+      const recipientName = req.user ? req.user.name : gName;
+      if (recipientPhone) {
+        await sendBookingConfirmationWhatsApp({
+          phone: recipientPhone,
+          name: recipientName,
+          serviceName: populatedBooking.service?.name,
+          date: new Date(populatedBooking.date).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          timeSlot: populatedBooking.timeSlot,
+          stylistName: populatedBooking.staff?.name,
+          bookingId: populatedBooking.bookingId,
+          totalAmount: populatedBooking.totalAmount,
+        });
+      }
+    } catch (waErr) {
+      console.error('WhatsApp send failed (non-fatal):', waErr.message);
     }
 
     res.status(201).json({ success: true, booking: populatedBooking });
@@ -466,6 +498,91 @@ const getAvailableSlots = async (req, res, next) => {
   }
 };
 
+// ─── sendDailyReminders (Cron / Admin Trigger) ────────────────────────────────
+/**
+ * @desc    Trigger automated daily WhatsApp and Email reminders for today's bookings
+ * @route   POST /api/bookings/send-daily-reminders
+ * @access  Admin or Secret Cron Trigger (?secret=... or x-cron-secret)
+ */
+const sendDailyReminders = async (req, res, next) => {
+  try {
+    const providedSecret = req.headers['x-cron-secret'] || req.query.secret;
+    const validSecret = process.env.CRON_SECRET || 'buc_cron_secret_2024';
+    const isAdmin = req.user && req.user.role === 'admin';
+
+    if (!isAdmin && providedSecret !== validSecret) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized cron trigger. Provide valid secret key or admin authorization.',
+      });
+    }
+
+    // Target date: defaults to today (00:00:00 to 23:59:59)
+    const targetDate = req.query.date ? new Date(req.query.date) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const bookings = await Booking.find({
+      date: { $gte: targetDate, $lt: nextDay },
+      status: { $in: ['confirmed', 'pending'] },
+    })
+      .populate('service', 'name price duration')
+      .populate('staff', 'name email phone')
+      .populate('customer', 'name email phone');
+
+    const reminderResults = [];
+
+    for (const b of bookings) {
+      const name = b.customer?.name || b.guestInfo?.name || 'Customer';
+      const phone = b.customer?.phone || b.guestInfo?.phone;
+      const email = b.customer?.email || b.guestInfo?.email;
+
+      let whatsappStatus = null;
+      if (phone) {
+        whatsappStatus = await sendAppointmentReminderWhatsApp({
+          phone,
+          name,
+          serviceName: b.service?.name,
+          timeSlot: b.timeSlot,
+          stylistName: b.staff?.name,
+          bookingId: b.bookingId,
+        });
+      }
+
+      let emailStatus = false;
+      if (email) {
+        try {
+          await sendAppointmentReminder(email, name, b);
+          emailStatus = true;
+        } catch (e) {
+          console.warn(`[Reminder Email Error for ${email}]:`, e.message);
+        }
+      }
+
+      reminderResults.push({
+        bookingId: b.bookingId,
+        customer: name,
+        phone,
+        email,
+        whatsappSent: Boolean(whatsappStatus?.success),
+        whatsappDetails: whatsappStatus,
+        emailSent: emailStatus,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully processed ${bookings.length} appointment reminders for today.`,
+      date: targetDate.toISOString().split('T')[0],
+      count: bookings.length,
+      reminders: reminderResults,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createBooking,
   getBookings,
@@ -473,4 +590,5 @@ module.exports = {
   updateBookingStatus,
   cancelBooking,
   getAvailableSlots,
+  sendDailyReminders,
 };

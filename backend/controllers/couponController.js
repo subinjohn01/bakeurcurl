@@ -13,6 +13,7 @@
 
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
+const { sendCouponIssuedWhatsApp } = require('../utils/whatsappService');
 
 // Helper: normalize last 10 digits of phone
 const cleanPhone = (p) => (p ? String(p).replace(/\D/g, '').slice(-10) : '');
@@ -108,6 +109,28 @@ const createCoupon = async (req, res, next) => {
     const populated = await Coupon.findById(coupon._id).populate('customer', 'name email phone');
 
     const recipientLabel = customer?.name || assignedPhone || assignedEmail;
+
+    // Send WhatsApp notification if customer phone exists (non-blocking)
+    try {
+      const targetPhone = assignedPhone || customer?.phone;
+      if (targetPhone) {
+        const discountText =
+          discountType === 'percentage'
+            ? `${discountValue}% OFF`
+            : `₹${discountValue} FLAT OFF`;
+
+        await sendCouponIssuedWhatsApp({
+          phone: targetPhone,
+          name: customer?.name || 'Valued Customer',
+          couponCode: normalizedCode,
+          discountText,
+          validUntil: coupon.validUntil,
+          minSpend: coupon.minBookingAmount,
+        });
+      }
+    } catch (waErr) {
+      console.error('[WhatsApp Coupon Alert Failed (non-fatal)]:', waErr.message);
+    }
 
     res.status(201).json({
       success: true,
