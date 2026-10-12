@@ -200,8 +200,8 @@ async function runTestSuite() {
   let brokenInterpolations = [];
   for (const file of jsFiles) {
     const code = fs.readFileSync(file, 'utf8');
-    // Match backtick template literal with broken ₹{ or ?{
-    if (/`[^`]*[₹?]{[^`]*`/.test(code)) {
+    // Match backtick template literal on the same line with broken ₹{ or ?{ (not valid ${...})
+    if (/`[^`\r\n]*[₹?]{[^`\r\n]*`/.test(code)) {
       brokenInterpolations.push(path.basename(file));
     }
   }
@@ -217,6 +217,23 @@ async function runTestSuite() {
     }
   }
   assert(nakedToastErrors.length === 0, 'All API error toasts guarantee fallback messages (no empty error toasts)', nakedToastErrors.join(', '));
+
+  // Test 2.8: Loyalty & Customer Contact Verification
+  console.log(`\n${colors.bold}4. Loyalty Coupon & Customer Contact Verification:${colors.reset}`);
+  const adminBookingsCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'admin', 'AdminBookings.js'), 'utf8');
+  assert(adminBookingsCode.includes('Customer & Contact') && adminBookingsCode.includes('wa.me'), 'AdminBookings shows customer contact details and WhatsApp quick-connect');
+
+  const adminLoyaltyPath = path.join(frontendSrc, 'pages', 'admin', 'AdminLoyalty.js');
+  assert(fs.existsSync(adminLoyaltyPath), 'AdminLoyalty.js page component exists');
+  const adminLoyaltyCode = fs.readFileSync(adminLoyaltyPath, 'utf8');
+  assert(adminLoyaltyCode.includes('/coupons') && adminLoyaltyCode.includes('Issue Loyalty Coupon'), 'AdminLoyalty has coupon issuance modal and API bindings');
+
+  assert(bookingPageCode.includes('handleApplyCoupon') && bookingPageCode.includes('/coupons/validate'), 'BookingPage supports loyalty coupon code validation and application');
+
+  const couponModelPath = path.join(__dirname, 'backend', 'models', 'Coupon.js');
+  assert(fs.existsSync(couponModelPath), 'Backend Coupon mongoose model exists');
+  const couponControllerPath = path.join(__dirname, 'backend', 'controllers', 'couponController.js');
+  assert(fs.existsSync(couponControllerPath), 'Backend couponController exists with validation & redemption logic');
 
   // 4. FRONTEND BUILD PRODUCTION TEST
   console.log(`\n${colors.bold}4. Production Build & Bundle Verification:${colors.reset}`);

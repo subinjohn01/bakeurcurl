@@ -20,6 +20,7 @@ import AdminServices from './pages/admin/AdminServices';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminStaff from './pages/admin/AdminStaff';
 import AdminQueries from './pages/admin/AdminQueries';
+import AdminLoyalty from './pages/admin/AdminLoyalty';
 import StaffDashboard from './pages/StaffDashboard';
 
 // Protected Route
@@ -80,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/admin/services" element={<ProtectedRoute requiredRole="admin"><AdminServices /></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute requiredRole="admin"><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/staff" element={<ProtectedRoute requiredRole="admin"><AdminStaff /></ProtectedRoute>} />
+      <Route path="/admin/loyalty" element={<ProtectedRoute requiredRole="admin"><AdminLoyalty /></ProtectedRoute>} />
       <Route path="/admin/queries" element={<ProtectedRoute requiredRole={['admin', 'staff']}><AdminQueries /></ProtectedRoute>} />
 
       {/* Staff */}

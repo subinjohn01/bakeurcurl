@@ -82,6 +82,23 @@ const bookingSchema = new mongoose.Schema(
       min: [0, 'Amount cannot be negative.'],
     },
 
+    // Optional coupon redemption details
+    originalAmount: {
+      type: Number,
+      default: null,
+    },
+    couponCode: {
+      type: String,
+      default: null,
+      trim: true,
+      uppercase: true,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // 30% advance payment amount
     advanceAmount: {
       type: Number,

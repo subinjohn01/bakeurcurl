@@ -1,7 +1,7 @@
 import React from 'react';
 import Badge from '../ui/Badge';
 
-const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymentOption }) => {
+const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymentOption, appliedCoupon }) => {
   const glassCard = {
     background: 'rgba(251,246,238,0.05)',
     backdropFilter: 'blur(20px)',
@@ -17,7 +17,8 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
     </div>
   );
 
-  const advanceAmount = service ? (service.price * 0.3).toFixed(2) : '0.00';
+  const finalPrice = appliedCoupon ? appliedCoupon.finalAmount : (service ? service.price : 0);
+  const advanceAmount = service ? (finalPrice * 0.3).toFixed(2) : '0.00';
 
   return (
     <div style={glassCard}>
@@ -51,7 +52,20 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
             <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{service.name}</p>
             <p style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>{service.duration} minutes</p>
           </div>
-          <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>${service.price}</span>
+          <div style={{ textAlign: 'right' }}>
+            {appliedCoupon ? (
+              <>
+                <div style={{ color: 'rgba(251,246,238,0.4)', textDecoration: 'line-through', fontSize: 14 }}>
+                  ₹{service.price}
+                </div>
+                <div style={{ color: '#34D399', fontSize: 20, fontWeight: 800 }}>
+                  ₹{appliedCoupon.finalAmount}
+                </div>
+              </>
+            ) : (
+              <span style={{ color: '#E8B4A0', fontSize: 22, fontWeight: 800 }}>₹{service.price}</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -62,6 +76,14 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
         {customerInfo?.name && row('Customer', customerInfo.name)}
         {customerInfo?.email && row('Email', customerInfo.email)}
         {customerInfo?.phone && row('Phone', customerInfo.phone)}
+        {appliedCoupon && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(251,246,238,0.07)' }}>
+            <span style={{ color: '#34D399', fontSize: 14, fontWeight: 600 }}>🎁 Loyalty Coupon</span>
+            <span style={{ color: '#34D399', fontSize: 14, fontWeight: 700 }}>
+              -₹{appliedCoupon.discountAmount} ({appliedCoupon.code})
+            </span>
+          </div>
+        )}
       </div>
 
       {paymentOption && (
@@ -73,17 +95,19 @@ const BookingSummary = ({ service, date, timeSlot, stylist, customerInfo, paymen
           {paymentOption === 'stripe' && service && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>Service Total</span>
-                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>${service.price}</span>
+                <span style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>Final Payable</span>
+                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>₹{finalPrice}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px dashed rgba(251,246,238,0.1)' }}>
                 <span style={{ color: '#E8B4A0', fontSize: 14, fontWeight: 600 }}>30% Advance Due</span>
-                <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800 }}>${advanceAmount}</span>
+                <span style={{ color: '#E8B4A0', fontSize: 18, fontWeight: 800 }}>₹{advanceAmount}</span>
               </div>
             </>
           )}
           {paymentOption === 'salon' && (
-            <p style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>Full payment collected at the salon on the day of your appointment.</p>
+            <p style={{ color: 'rgba(251,246,238,0.55)', fontSize: 13 }}>
+              Total payable at salon: <strong style={{ color: '#F1D592' }}>₹{finalPrice}</strong> on appointment day.
+            </p>
           )}
         </div>
       )}

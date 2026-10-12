@@ -122,6 +122,9 @@ const BookingPage = () => {
   const [bookingId, setBookingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const steps = ['Select Service', 'Date & Stylist', 'Your Details', 'Payment'];
 
@@ -165,6 +168,38 @@ const BookingPage = () => {
     padding: 32,
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return toast.error('Please enter a coupon code.');
+    const emailToVerify = user?.email || customerInfo.email;
+    if (!emailToVerify || !emailToVerify.trim()) {
+      return toast.error('Please enter your contact email in details first so we can verify your coupon.');
+    }
+    if (!selectedService) return toast.error('Please select a service first.');
+
+    setValidatingCoupon(true);
+    try {
+      const res = await axiosInstance.post('/coupons/validate', {
+        code: couponInput.trim().toUpperCase(),
+        bookingAmount: selectedService.price,
+        customerEmail: emailToVerify.trim(),
+      });
+      if (res.data.success) {
+        setAppliedCoupon(res.data.coupon);
+        toast.success(res.data.message || 'Loyalty coupon applied!');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid or ineligible coupon code.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    toast('Coupon removed', { icon: 'ℹ️' });
+  };
+
   const handleBookingSubmit = async () => {
     if (!customerInfo.name || !customerInfo.email) return toast.error('Please enter name and email');
     if (!paymentOption) return toast.error('Please choose a payment option');
@@ -177,6 +212,7 @@ const BookingPage = () => {
         staffId: selectedStylist?._id,
         customerInfo,
         paymentOption,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       });
       setBookingId(res.data?._id || 'BUC-' + Math.floor(1000 + Math.random() * 9000));
       if (paymentOption === 'salon') {
@@ -503,6 +539,79 @@ const BookingPage = () => {
                   />
                 </div>
 
+                {/* Loyalty Coupon */}
+                <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: 'rgba(241,213,146,0.06)', border: '1px solid rgba(241,213,146,0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <label style={{ color: '#F1D592', fontSize: 13, fontWeight: 700, margin: 0 }}>
+                      🎁 Have a Loyalty Coupon?
+                    </label>
+                    {appliedCoupon && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        style={{ background: 'transparent', border: 'none', color: '#F87171', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Remove Coupon
+                      </button>
+                    )}
+                  </div>
+
+                  {appliedCoupon ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.35)', padding: '10px 14px', borderRadius: 8 }}>
+                      <div>
+                        <span style={{ fontWeight: 800, color: '#34D399', letterSpacing: '0.05em', fontFamily: 'monospace', fontSize: 15 }}>
+                          {appliedCoupon.code}
+                        </span>
+                        <span style={{ color: 'rgba(251,246,238,0.7)', fontSize: 13, marginLeft: 8 }}>
+                          ({appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}% OFF` : `₹${appliedCoupon.discountValue} FLAT OFF`})
+                        </span>
+                      </div>
+                      <div style={{ color: '#34D399', fontWeight: 800, fontSize: 14 }}>
+                        -₹{appliedCoupon.discountAmount} SAVED
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        type="text"
+                        placeholder="Enter your assigned coupon code..."
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        style={{
+                          flex: 1,
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          background: 'rgba(251,246,238,0.06)',
+                          border: '1px solid rgba(251,246,238,0.15)',
+                          color: '#fff',
+                          fontSize: 14,
+                          textTransform: 'uppercase',
+                          fontWeight: 600,
+                          letterSpacing: '0.05em',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={validatingCoupon || !couponInput.trim()}
+                        style={{
+                          padding: '10px 18px',
+                          background: couponInput.trim() ? 'linear-gradient(135deg, #A87A51, #754B2E)' : 'rgba(251,246,238,0.1)',
+                          color: couponInput.trim() ? '#fff' : 'rgba(251,246,238,0.4)',
+                          border: 'none',
+                          borderRadius: 8,
+                          fontWeight: 700,
+                          cursor: couponInput.trim() && !validatingCoupon ? 'pointer' : 'not-allowed',
+                          fontSize: 13,
+                        }}
+                      >
+                        {validatingCoupon ? 'Checking...' : 'Apply'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Payment selection */}
                 <div style={{ marginBottom: 24 }}>
                   <label style={{ display: 'block', color: '#F1D592', fontSize: 14, fontWeight: 700, marginBottom: 10 }}>
@@ -575,7 +684,7 @@ const BookingPage = () => {
                 <Elements stripe={stripePromise}>
                   <PaymentForm
                     bookingId={bookingId}
-                    amount={selectedService ? selectedService.price * 0.3 : 0}
+                    amount={appliedCoupon ? appliedCoupon.finalAmount * 0.3 : (selectedService ? selectedService.price * 0.3 : 0)}
                     onSuccess={() => setBookingComplete(true)}
                   />
                 </Elements>
@@ -592,6 +701,7 @@ const BookingPage = () => {
               stylist={selectedStylist}
               customerInfo={step >= 2 ? customerInfo : null}
               paymentOption={step >= 2 ? paymentOption : null}
+              appliedCoupon={appliedCoupon}
             />
           </div>
         </div>

@@ -13,6 +13,7 @@
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const { sendBookingConfirmation, sendBookingCancellation } = require('../utils/emailService');
 
 // ─── Business Logic Constants ─────────────────────────────────────────────────
@@ -39,11 +40,18 @@ const createBooking = async (req, res, next) => {
       date,
       timeSlot,
       notes,
+      couponCode,
+      customerInfo,
       // Guest fields (used when not authenticated)
       guestName,
       guestEmail,
       guestPhone,
     } = req.body;
+
+    const gName = guestName || customerInfo?.name;
+    const gEmail = guestEmail || customerInfo?.email;
+    const gPhone = guestPhone || customerInfo?.phone;
+    const bookingNotes = notes || customerInfo?.notes || '';
 
     // Validate service exists and is active
     const service = await Service.findById(serviceId);
@@ -77,8 +85,34 @@ const createBooking = async (req, res, next) => {
       });
     }
 
-    // Determine 30% advance payment amount
-    const totalAmount = service.price;
+    // Determine total and advance payment amounts with optional coupon
+    const originalAmount = service.price;
+    let totalAmount = originalAmount;
+    let discountAmount = 0;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      const normalizedCode = couponCode.trim().toUpperCase();
+      const userEmail = req.user ? req.user.email : gEmail;
+      const foundCoupon = await Coupon.findOne({
+        code: normalizedCode,
+        isRedeemed: false,
+        validUntil: { $gte: new Date() },
+      });
+
+      if (foundCoupon && userEmail && foundCoupon.assignedEmail.toLowerCase() === userEmail.toLowerCase()) {
+        if (!foundCoupon.minBookingAmount || originalAmount >= foundCoupon.minBookingAmount) {
+          if (foundCoupon.discountType === 'fixed') {
+            discountAmount = Math.min(foundCoupon.discountValue, originalAmount);
+          } else if (foundCoupon.discountType === 'percentage') {
+            discountAmount = parseFloat(((originalAmount * foundCoupon.discountValue) / 100).toFixed(2));
+          }
+          totalAmount = Math.max(0, originalAmount - discountAmount);
+          appliedCoupon = foundCoupon;
+        }
+      }
+    }
+
     const advanceAmount = parseFloat((totalAmount * 0.3).toFixed(2));
 
     // Build booking document
@@ -87,9 +121,12 @@ const createBooking = async (req, res, next) => {
       staff: staffId,
       date: bookingDate,
       timeSlot,
+      originalAmount,
       totalAmount,
+      discountAmount,
+      couponCode: appliedCoupon ? appliedCoupon.code : null,
       advanceAmount,
-      notes: notes || '',
+      notes: bookingNotes,
     };
 
     if (req.user) {
@@ -97,16 +134,23 @@ const createBooking = async (req, res, next) => {
       bookingData.customer = req.user._id;
     } else {
       // Guest booking — require guest info
-      if (!guestName || !guestEmail || !guestPhone) {
+      if (!gName || !gEmail || !gPhone) {
         return res.status(400).json({
           success: false,
           message: 'Guest name, email, and phone are required for guest bookings.',
         });
       }
-      bookingData.guestInfo = { name: guestName, email: guestEmail, phone: guestPhone };
+      bookingData.guestInfo = { name: gName, email: gEmail, phone: gPhone };
     }
 
     const booking = await Booking.create(bookingData);
+
+    // If a coupon was applied, mark it as redeemed
+    if (appliedCoupon) {
+      appliedCoupon.isRedeemed = true;
+      appliedCoupon.redeemedAt = new Date();
+      await appliedCoupon.save();
+    }
 
     // Populate for email
     const populatedBooking = await Booking.findById(booking._id)

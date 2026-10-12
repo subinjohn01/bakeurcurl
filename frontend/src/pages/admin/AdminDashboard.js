@@ -65,6 +65,7 @@ const navItems = [
   { to: '/admin/services', label: '✂️ Services' },
   { to: '/admin/products', label: '🧴 Products' },
   { to: '/admin/staff', label: '👥 Staff' },
+  { to: '/admin/loyalty', label: '🎁 Loyalty' },
   { to: '/admin/queries', label: '💬 Queries' },
 ];
 

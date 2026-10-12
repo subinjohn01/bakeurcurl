@@ -193,28 +193,72 @@ export default function AdminBookings() {
         <div style={S.tableWrap}>
           <table style={S.table}>
             <thead>
-              <tr>{['Booking ID', 'Customer', 'Service', 'Date & Time', 'Amount', 'Payment', 'Status', 'Actions'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
+              <tr>{['Booking ID', 'Customer & Contact', 'Service', 'Date & Time', 'Amount', 'Payment', 'Status', 'Actions'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr><td colSpan={8} style={{ ...S.td, textAlign: 'center', color: 'rgba(251,246,238,0.4)' }}>Loading...</td></tr>
-              ) : filtered.map(b => (
-                <tr key={b._id}>
-                  <td style={{ ...S.td, color: '#E8B4A0', fontWeight: '700' }}>{b.bookingId}</td>
-                  <td style={S.td}>{b.customer?.name || b.guestInfo?.name || 'Guest'}</td>
-                  <td style={S.td}>{b.service?.name || 'Service'}</td>
-                  <td style={S.td}>{new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {b.timeSlot}</td>
-                  <td style={S.td}>${b.totalAmount}</td>
-                  <td style={S.td}><Badge s={b.paymentStatus} colorMap={paymentColors} /></td>
-                  <td style={S.td}><Badge s={b.status} colorMap={statusColors} /></td>
-                  <td style={S.td}>
-                    <button style={S.actionBtn('#D4AF8F')} onClick={() => setSelected(b)}>View</button>
-                    {b.status === 'pending' && <button style={S.actionBtn('#10B981')} onClick={() => updateStatus(b._id, 'confirmed')}>Confirm</button>}
-                    {b.status === 'confirmed' && <button style={S.actionBtn('#8B5A2B')} onClick={() => updateStatus(b._id, 'completed')}>Complete</button>}
-                    {(b.status === 'pending' || b.status === 'confirmed') && <button style={S.actionBtn('#EF4444')} onClick={() => updateStatus(b._id, 'cancelled')}>Cancel</button>}
-                  </td>
-                </tr>
-              ))}
+              ) : filtered.map(b => {
+                const customerName = b.customer?.name || b.guestInfo?.name || 'Guest';
+                const customerEmail = b.customer?.email || b.guestInfo?.email || '';
+                const customerPhone = b.customer?.phone || b.guestInfo?.phone || '';
+                return (
+                  <tr key={b._id}>
+                    <td style={{ ...S.td, color: '#E8B4A0', fontWeight: '700' }}>{b.bookingId}</td>
+                    <td style={S.td}>
+                      <div style={{ fontWeight: '600', color: '#FBF6EE' }}>{customerName}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4, fontSize: '0.8rem' }}>
+                        {customerPhone ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: '#F1D592' }}>📞 {customerPhone}</span>
+                            <a
+                              href={`tel:${customerPhone}`}
+                              style={{ color: '#10B981', fontSize: '0.75rem', textDecoration: 'underline' }}
+                              title="Call customer"
+                            >
+                              Call
+                            </a>
+                            <a
+                              href={`https://wa.me/${customerPhone.replace(/[^\d]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#34D399', fontSize: '0.75rem', textDecoration: 'underline' }}
+                              title="WhatsApp customer"
+                            >
+                              WhatsApp
+                            </a>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'rgba(251,246,238,0.3)', fontSize: '0.75rem' }}>No phone provided</span>
+                        )}
+                        {customerEmail ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: 'rgba(251,246,238,0.6)' }}>✉️ {customerEmail}</span>
+                            <a
+                              href={`mailto:${customerEmail}`}
+                              style={{ color: '#E8B4A0', fontSize: '0.75rem', textDecoration: 'underline' }}
+                              title="Email customer"
+                            >
+                              Email
+                            </a>
+                          </div>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td style={S.td}>{b.service?.name || 'Service'}</td>
+                    <td style={S.td}>{new Date(b.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {b.timeSlot}</td>
+                    <td style={S.td}>₹{b.totalAmount}</td>
+                    <td style={S.td}><Badge s={b.paymentStatus} colorMap={paymentColors} /></td>
+                    <td style={S.td}><Badge s={b.status} colorMap={statusColors} /></td>
+                    <td style={S.td}>
+                      <button style={S.actionBtn('#D4AF8F')} onClick={() => setSelected(b)}>View</button>
+                      {b.status === 'pending' && <button style={S.actionBtn('#10B981')} onClick={() => updateStatus(b._id, 'confirmed')}>Confirm</button>}
+                      {b.status === 'confirmed' && <button style={S.actionBtn('#8B5A2B')} onClick={() => updateStatus(b._id, 'completed')}>Complete</button>}
+                      {(b.status === 'pending' || b.status === 'confirmed') && <button style={S.actionBtn('#EF4444')} onClick={() => updateStatus(b._id, 'cancelled')}>Cancel</button>}
+                    </td>
+                  </tr>
+                );
+              })}
               {!loading && filtered.length === 0 && (
                 <tr><td colSpan={8} style={{ ...S.td, textAlign: 'center', color: 'rgba(251,246,238,0.35)' }}>No bookings found</td></tr>
               )}
@@ -228,16 +272,16 @@ export default function AdminBookings() {
           <div style={S.modal} onClick={e => e.stopPropagation()}>
             <h2 style={S.mh2}>Booking Details — {selected.bookingId}</h2>
             {[
-              ['Customer', selected.custome.name || selected.guestInf.name],
-              ['Email', selected.custome.email || selected.guestInf.email],
-              ['Phone', selected.custome.phone || selected.guestInf.phone],
-              ['Service', selected.servic.name],
-              ['Stylist', selected.staf.name || 'Any'],
+              ['Customer', selected.customer?.name || selected.guestInfo?.name || 'Guest'],
+              ['Email', selected.customer?.email || selected.guestInfo?.email || 'Not provided'],
+              ['Phone', selected.customer?.phone || selected.guestInfo?.phone || 'Not provided'],
+              ['Service', selected.service?.name || 'Service'],
+              ['Stylist', selected.staff?.name || 'Any Stylist'],
               ['Date', new Date(selected.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
               ['Time', selected.timeSlot],
               ['Total', `₹${selected.totalAmount}`],
               ['Advance', selected.advanceAmount ? `₹${selected.advanceAmount}` : 'None'],
-              ['Payment', selected.paymentStatu.replace('_', ' ')],
+              ['Payment', (selected.paymentStatus || '').replace('_', ' ')],
               ['Status', selected.status],
               ['Notes', selected.notes || '—'],
             ].map(([k, v]) => (
@@ -246,6 +290,44 @@ export default function AdminBookings() {
                 <span style={{ fontSize: '0.9rem' }}>{v}</span>
               </div>
             ))}
+
+            {/* Quick Contact Action Bar */}
+            {(selected.customer?.phone || selected.guestInfo?.phone || selected.customer?.email || selected.guestInfo?.email) && (
+              <div style={{ marginTop: '1.25rem', padding: '12px', background: 'rgba(251,246,238,0.05)', borderRadius: '10px', border: '1px solid rgba(241,213,146,0.2)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#F1D592', fontWeight: '700', marginBottom: '8px' }}>
+                  💬 CONNECT WITH CUSTOMER
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {(selected.customer?.phone || selected.guestInfo?.phone) && (
+                    <>
+                      <a
+                        href={`tel:${selected.customer?.phone || selected.guestInfo?.phone}`}
+                        style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(16,185,129,0.15)', color: '#34D399', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
+                      >
+                        📞 Call Customer
+                      </a>
+                      <a
+                        href={`https://wa.me/${(selected.customer?.phone || selected.guestInfo?.phone).replace(/[^\d]/g, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(52,211,153,0.15)', color: '#10B981', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
+                      >
+                        💬 WhatsApp
+                      </a>
+                    </>
+                  )}
+                  {(selected.customer?.email || selected.guestInfo?.email) && (
+                    <a
+                      href={`mailto:${selected.customer?.email || selected.guestInfo?.email}?subject=Regarding your BakeUrCurls Booking ${selected.bookingId}`}
+                      style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(241,213,146,0.15)', color: '#F1D592', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' }}
+                    >
+                      ✉️ Send Email
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div style={{ ...S.mBtns, marginTop: '1.5rem' }}>
               {selected.status === 'pending' && <button style={S.saveBtn} onClick={() => updateStatus(selected._id, 'confirmed')}>✅ Confirm</button>}
               {selected.status === 'confirmed' && <button style={S.saveBtn} onClick={() => updateStatus(selected._id, 'completed')}>✔️ Complete</button>}
