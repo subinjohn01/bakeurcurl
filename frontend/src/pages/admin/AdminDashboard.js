@@ -62,6 +62,7 @@ function Badge({ s }) {
 const navItems = [
   { to: '/admin', label: '📊 Dashboard', exact: true },
   { to: '/admin/bookings', label: '📅 Bookings' },
+  { to: '/admin/customers', label: '👤 Customers' },
   { to: '/admin/services', label: '✂️ Services' },
   { to: '/admin/products', label: '🧴 Products' },
   { to: '/admin/staff', label: '👥 Staff' },

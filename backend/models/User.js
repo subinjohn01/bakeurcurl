@@ -40,6 +40,16 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\+?[\d\s\-()]{7,20}$/, 'Please enter a valid phone number.'],
     },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    birthday: {
+      type: String, // Stored as YYYY-MM-DD or date string
+      trim: true,
+      default: '',
+    },
     role: {
       type: String,
       enum: {

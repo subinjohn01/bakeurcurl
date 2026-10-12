@@ -58,13 +58,18 @@ const couponSchema = new mongoose.Schema(
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Coupon must be assigned to a specific customer.'],
+      default: null,
     },
     assignedEmail: {
       type: String,
-      required: true,
       lowercase: true,
       trim: true,
+      default: '',
+    },
+    assignedPhone: {
+      type: String,
+      trim: true,
+      default: '',
     },
     isRedeemed: {
       type: Boolean,
@@ -90,6 +95,7 @@ const couponSchema = new mongoose.Schema(
 );
 
 couponSchema.index({ code: 1, assignedEmail: 1 });
+couponSchema.index({ code: 1, assignedPhone: 1 });
 couponSchema.index({ customer: 1, isRedeemed: 1 });
 
 const Coupon = mongoose.model('Coupon', couponSchema);

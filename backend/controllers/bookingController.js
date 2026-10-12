@@ -94,21 +94,40 @@ const createBooking = async (req, res, next) => {
     if (couponCode) {
       const normalizedCode = couponCode.trim().toUpperCase();
       const userEmail = req.user ? req.user.email : gEmail;
+      const userPhone = req.user ? req.user.phone : gPhone;
+
+      const cleanUserPhone = userPhone ? String(userPhone).replace(/\D/g, '').slice(-10) : '';
+
       const foundCoupon = await Coupon.findOne({
         code: normalizedCode,
         isRedeemed: false,
         validUntil: { $gte: new Date() },
       });
 
-      if (foundCoupon && userEmail && foundCoupon.assignedEmail.toLowerCase() === userEmail.toLowerCase()) {
-        if (!foundCoupon.minBookingAmount || originalAmount >= foundCoupon.minBookingAmount) {
-          if (foundCoupon.discountType === 'fixed') {
-            discountAmount = Math.min(foundCoupon.discountValue, originalAmount);
-          } else if (foundCoupon.discountType === 'percentage') {
-            discountAmount = parseFloat(((originalAmount * foundCoupon.discountValue) / 100).toFixed(2));
+      if (foundCoupon) {
+        const cleanCouponPhone = foundCoupon.assignedPhone
+          ? String(foundCoupon.assignedPhone).replace(/\D/g, '').slice(-10)
+          : '';
+
+        const phoneMatches = Boolean(
+          cleanCouponPhone && cleanUserPhone && cleanCouponPhone === cleanUserPhone
+        );
+        const emailMatches = Boolean(
+          foundCoupon.assignedEmail &&
+            userEmail &&
+            foundCoupon.assignedEmail.toLowerCase() === String(userEmail).toLowerCase()
+        );
+
+        if (phoneMatches || emailMatches) {
+          if (!foundCoupon.minBookingAmount || originalAmount >= foundCoupon.minBookingAmount) {
+            if (foundCoupon.discountType === 'fixed') {
+              discountAmount = Math.min(foundCoupon.discountValue, originalAmount);
+            } else if (foundCoupon.discountType === 'percentage') {
+              discountAmount = parseFloat(((originalAmount * foundCoupon.discountValue) / 100).toFixed(2));
+            }
+            totalAmount = Math.max(0, originalAmount - discountAmount);
+            appliedCoupon = foundCoupon;
           }
-          totalAmount = Math.max(0, originalAmount - discountAmount);
-          appliedCoupon = foundCoupon;
         }
       }
     }

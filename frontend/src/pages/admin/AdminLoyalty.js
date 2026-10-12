@@ -114,6 +114,8 @@ export default function AdminLoyalty() {
     validUntil: '',
     customerId: '',
     customerEmail: '',
+    customerPhone: '',
+    targetInput: '',
     minBookingAmount: '0',
   });
 
@@ -148,7 +150,6 @@ export default function AdminLoyalty() {
   }, []);
 
   const handleGenerateCode = () => {
-    const chars = 'CURLVIP2024';
     const rand = Math.floor(1000 + Math.random() * 9000);
     const code = `VIP-${rand}`;
     setFormData((prev) => ({ ...prev, code }));
@@ -157,7 +158,13 @@ export default function AdminLoyalty() {
   const handleCustomerSelect = (e) => {
     const val = e.target.value;
     if (!val) {
-      setFormData((prev) => ({ ...prev, customerId: '', customerEmail: '' }));
+      setFormData((prev) => ({
+        ...prev,
+        customerId: '',
+        customerEmail: '',
+        customerPhone: '',
+        targetInput: '',
+      }));
       return;
     }
     const found = customers.find((c) => c._id === val);
@@ -165,9 +172,22 @@ export default function AdminLoyalty() {
       setFormData((prev) => ({
         ...prev,
         customerId: found._id,
-        customerEmail: found.email,
+        customerEmail: found.email || '',
+        customerPhone: found.phone || '',
+        targetInput: found.phone || found.email || '',
       }));
     }
+  };
+
+  const handleTargetInputChange = (val) => {
+    const isEmail = val.includes('@');
+    setFormData((prev) => ({
+      ...prev,
+      targetInput: val,
+      customerId: '',
+      customerEmail: isEmail ? val.trim() : '',
+      customerPhone: !isEmail ? val.trim() : '',
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -181,18 +201,25 @@ export default function AdminLoyalty() {
       return toast.error('Percentage discount cannot exceed 100%.');
     }
     if (!formData.validUntil) return toast.error('Expiration date is required.');
-    if (!formData.customerId && !formData.customerEmail.trim()) {
-      return toast.error('Please select or specify a target customer.');
+
+    const phoneOrEmail = formData.customerPhone || formData.customerEmail || formData.targetInput.trim();
+    if (!formData.customerId && !phoneOrEmail) {
+      return toast.error('Please select a customer or enter a target mobile number.');
     }
 
     try {
       setSubmitting(true);
-      const res = await axiosInstance.post('/coupons', {
+      const isEmail = phoneOrEmail.includes('@');
+      const payload = {
         ...formData,
         code: formData.code.trim().toUpperCase(),
         discountValue: Number(formData.discountValue),
         minBookingAmount: Number(formData.minBookingAmount) || 0,
-      });
+        customerPhone: formData.customerPhone || (!isEmail ? phoneOrEmail : ''),
+        customerEmail: formData.customerEmail || (isEmail ? phoneOrEmail : ''),
+      };
+
+      const res = await axiosInstance.post('/coupons', payload);
 
       if (res.data.success) {
         toast.success(res.data.message || 'Loyalty coupon issued successfully!');
@@ -206,6 +233,8 @@ export default function AdminLoyalty() {
           validUntil: '',
           customerId: '',
           customerEmail: '',
+          customerPhone: '',
+          targetInput: '',
           minBookingAmount: '0',
         });
         fetchCoupons();
@@ -416,14 +445,16 @@ export default function AdminLoyalty() {
                       <td style={S.td}>
                         <div>
                           <div style={{ fontWeight: '600', color: '#FBF6EE' }}>
-                            {c.customer?.name || 'Customer'}
+                            {c.customer?.name || (c.assignedPhone ? `Customer (${c.assignedPhone})` : 'Customer')}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#A87A51' }}>
-                            {c.assignedEmail}
-                          </div>
-                          {c.customer?.phone && (
-                            <div style={{ fontSize: '0.75rem', color: 'rgba(251,246,238,0.45)' }}>
-                              {c.customer?.phone}
+                          {(c.assignedPhone || c.customer?.phone) && (
+                            <div style={{ fontSize: '0.82rem', color: '#34D399', fontWeight: 600 }}>
+                              📱 {c.assignedPhone || c.customer?.phone}
+                            </div>
+                          )}
+                          {c.assignedEmail && (
+                            <div style={{ fontSize: '0.75rem', color: '#A87A51' }}>
+                              ✉️ {c.assignedEmail}
                             </div>
                           )}
                         </div>
@@ -570,32 +601,33 @@ export default function AdminLoyalty() {
 
               {/* Target Customer */}
               <div style={S.formGroup}>
-                <label style={S.label}>Target Customer (Only they can redeem) *</label>
+                <label style={S.label}>Target Customer Mobile Number (or Registered Email) *</label>
                 {customers.length > 0 ? (
                   <select
                     value={formData.customerId}
                     onChange={handleCustomerSelect}
                     style={S.select}
                   >
-                    <option value="">-- Choose registered customer --</option>
+                    <option value="">-- Choose registered customer (or type mobile below) --</option>
                     {customers.map((cust) => (
                       <option key={cust._id} value={cust._id}>
-                        {cust.name} ({cust.email}) {cust.phone ? `- ${cust.phone}` : ''}
+                        {cust.name} {cust.phone ? `· 📱 ${cust.phone}` : ''} ({cust.email})
                       </option>
                     ))}
                   </select>
                 ) : null}
                 <div style={{ marginTop: '0.5rem' }}>
                   <input
-                    type="email"
-                    placeholder="Or enter customer's registered email directly..."
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value, customerId: '' })}
+                    type="text"
+                    inputMode="tel"
+                    placeholder="Enter customer mobile number (e.g. 8891020402) or email..."
+                    value={formData.targetInput}
+                    onChange={(e) => handleTargetInputChange(e.target.value)}
                     style={S.input}
                   />
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(251,246,238,0.4)', marginTop: '4px' }}>
-                  Coupons are tied exclusively to this customer's account/email.
+                <div style={{ fontSize: '0.75rem', color: 'rgba(251,246,238,0.45)', marginTop: '4px' }}>
+                  📱 Only customer with this mobile number (or email) can redeem this coupon.
                 </div>
               </div>
 

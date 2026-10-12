@@ -171,8 +171,9 @@ const BookingPage = () => {
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return toast.error('Please enter a coupon code.');
     const emailToVerify = user?.email || customerInfo.email;
-    if (!emailToVerify || !emailToVerify.trim()) {
-      return toast.error('Please enter your contact email in details first so we can verify your coupon.');
+    const phoneToVerify = user?.phone || customerInfo.phone;
+    if ((!emailToVerify || !emailToVerify.trim()) && (!phoneToVerify || !phoneToVerify.trim())) {
+      return toast.error('Please enter your contact mobile number or email above first so we can verify your coupon.');
     }
     if (!selectedService) return toast.error('Please select a service first.');
 
@@ -181,7 +182,8 @@ const BookingPage = () => {
       const res = await axiosInstance.post('/coupons/validate', {
         code: couponInput.trim().toUpperCase(),
         bookingAmount: selectedService.price,
-        customerEmail: emailToVerify.trim(),
+        customerEmail: emailToVerify ? emailToVerify.trim() : undefined,
+        customerPhone: phoneToVerify ? phoneToVerify.trim() : undefined,
       });
       if (res.data.success) {
         setAppliedCoupon(res.data.coupon);

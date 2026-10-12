@@ -226,17 +226,29 @@ async function runTestSuite() {
   const adminLoyaltyPath = path.join(frontendSrc, 'pages', 'admin', 'AdminLoyalty.js');
   assert(fs.existsSync(adminLoyaltyPath), 'AdminLoyalty.js page component exists');
   const adminLoyaltyCode = fs.readFileSync(adminLoyaltyPath, 'utf8');
-  assert(adminLoyaltyCode.includes('/coupons') && adminLoyaltyCode.includes('Issue Loyalty Coupon'), 'AdminLoyalty has coupon issuance modal and API bindings');
+  assert(adminLoyaltyCode.includes('/coupons') && adminLoyaltyCode.includes('Target Customer Mobile Number'), 'AdminLoyalty supports mobile-number based coupon issuance');
 
-  assert(bookingPageCode.includes('handleApplyCoupon') && bookingPageCode.includes('/coupons/validate'), 'BookingPage supports loyalty coupon code validation and application');
+  assert(bookingPageCode.includes('handleApplyCoupon') && bookingPageCode.includes('customerPhone'), 'BookingPage supports mobile-number based loyalty coupon redemption');
 
   const couponModelPath = path.join(__dirname, 'backend', 'models', 'Coupon.js');
   assert(fs.existsSync(couponModelPath), 'Backend Coupon mongoose model exists');
   const couponControllerPath = path.join(__dirname, 'backend', 'controllers', 'couponController.js');
   assert(fs.existsSync(couponControllerPath), 'Backend couponController exists with validation & redemption logic');
 
-  // 4. FRONTEND BUILD PRODUCTION TEST
-  console.log(`\n${colors.bold}4. Production Build & Bundle Verification:${colors.reset}`);
+  // Test 2.9: Customer Management CRM Verification
+  console.log(`\n${colors.bold}5. Customer Management Tab & CRM Verification:${colors.reset}`);
+  const adminCustomersPath = path.join(frontendSrc, 'pages', 'admin', 'AdminCustomers.js');
+  assert(fs.existsSync(adminCustomersPath), 'AdminCustomers.js page component exists');
+  const adminCustomersCode = fs.readFileSync(adminCustomersPath, 'utf8');
+  assert(adminCustomersCode.includes('/customers') && adminCustomersCode.includes('Bookings Done So Far'), 'AdminCustomers has customer profile update & booking history viewing');
+
+  const customerControllerPath = path.join(__dirname, 'backend', 'controllers', 'customerController.js');
+  assert(fs.existsSync(customerControllerPath), 'Backend customerController exists');
+  const customerRoutesPath = path.join(__dirname, 'backend', 'routes', 'customerRoutes.js');
+  assert(fs.existsSync(customerRoutesPath), 'Backend customerRoutes exists');
+
+  // 6. FRONTEND BUILD PRODUCTION TEST
+  console.log(`\n${colors.bold}6. Production Build & Bundle Verification:${colors.reset}`);
   const buildIndex = path.join(__dirname, 'frontend', 'build', 'index.html');
   const buildExists = fs.existsSync(buildIndex);
   assert(buildExists, 'Production build artifact exists at frontend/build/index.html');

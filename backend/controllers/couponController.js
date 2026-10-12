@@ -14,6 +14,9 @@
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
 
+// Helper: normalize last 10 digits of phone
+const cleanPhone = (p) => (p ? String(p).replace(/\D/g, '').slice(-10) : '');
+
 // ─── createCoupon (Admin) ─────────────────────────────────────────────────────
 const createCoupon = async (req, res, next) => {
   try {
@@ -26,6 +29,7 @@ const createCoupon = async (req, res, next) => {
       validUntil,
       customerId,
       customerEmail,
+      customerPhone,
       minBookingAmount,
     } = req.body;
 
@@ -50,20 +54,32 @@ const createCoupon = async (req, res, next) => {
       });
     }
 
-    // Find assigned customer by ID or Email
-    let customer;
-    if (customerId) {
-      customer = await User.findById(customerId);
-    } else if (customerEmail) {
-      customer = await User.findOne({ email: customerEmail.trim().toLowerCase() });
-    }
+    const trimmedPhone = customerPhone ? customerPhone.trim() : '';
+    const trimmedEmail = customerEmail ? customerEmail.trim().toLowerCase() : '';
+    const phoneDigits = cleanPhone(trimmedPhone);
 
-    if (!customer) {
-      return res.status(404).json({
+    if (!customerId && !trimmedPhone && !trimmedEmail) {
+      return res.status(400).json({
         success: false,
-        message: `Customer not found. Please provide a registered customer ID or valid email address.`,
+        message: 'Please provide a target customer mobile number, email, or select a customer.',
       });
     }
+
+    // Find assigned customer by ID, Phone, or Email
+    let customer = null;
+    if (customerId) {
+      customer = await User.findById(customerId);
+    } else if (phoneDigits) {
+      customer = await User.findOne({
+        phone: { $regex: phoneDigits + '$' },
+      });
+    } else if (trimmedEmail) {
+      customer = await User.findOne({ email: trimmedEmail });
+    }
+
+    // Determine assignedEmail and assignedPhone
+    const assignedPhone = customer?.phone || trimmedPhone;
+    const assignedEmail = customer?.email || trimmedEmail;
 
     // Check code uniqueness
     const normalizedCode = code.trim().toUpperCase();
@@ -82,17 +98,20 @@ const createCoupon = async (req, res, next) => {
       discountValue: Number(discountValue),
       validFrom: validFrom ? new Date(validFrom) : new Date(),
       validUntil: new Date(validUntil),
-      customer: customer._id,
-      assignedEmail: customer.email,
+      customer: customer ? customer._id : null,
+      assignedEmail,
+      assignedPhone,
       minBookingAmount: minBookingAmount ? Number(minBookingAmount) : 0,
       createdBy: req.user._id,
     });
 
     const populated = await Coupon.findById(coupon._id).populate('customer', 'name email phone');
 
+    const recipientLabel = customer?.name || assignedPhone || assignedEmail;
+
     res.status(201).json({
       success: true,
-      message: `Loyalty coupon '${normalizedCode}' issued to ${customer.name}!`,
+      message: `Loyalty coupon '${normalizedCode}' issued to ${recipientLabel}!`,
       coupon: populated,
     });
   } catch (err) {
@@ -151,16 +170,16 @@ const getMyCoupons = async (req, res, next) => {
   }
 };
 
-// ─── validateCoupon (Customer or Guest with email) ────────────────────────────
+// ─── validateCoupon (Customer or Guest with email/phone) ─────────────────────
 const validateCoupon = async (req, res, next) => {
   try {
-    const { code, bookingAmount, customerEmail } = req.body;
+    const { code, bookingAmount, customerEmail, customerPhone } = req.body;
     if (!code) {
       return res.status(400).json({ success: false, message: 'Please enter a coupon code.' });
     }
 
     const normalizedCode = code.trim().toUpperCase();
-    const coupon = await Coupon.findOne({ code: normalizedCode }).populate('customer', 'name email');
+    const coupon = await Coupon.findOne({ code: normalizedCode }).populate('customer', 'name email phone');
 
     if (!coupon) {
       return res.status(404).json({
@@ -169,12 +188,27 @@ const validateCoupon = async (req, res, next) => {
       });
     }
 
-    // Verify ownership: customer must match
+    // Verify ownership: customer must match by phone OR email
     const userEmail = req.user?.email || customerEmail?.trim().toLowerCase();
-    if (!userEmail || userEmail.toLowerCase() !== coupon.assignedEmail.toLowerCase()) {
+    const userPhone = req.user?.phone || customerPhone?.trim();
+
+    const cleanUserPhone = cleanPhone(userPhone);
+    const cleanAssignedPhone = cleanPhone(coupon.assignedPhone || coupon.customer?.phone);
+
+    const phoneMatches = Boolean(
+      cleanAssignedPhone && cleanUserPhone && cleanAssignedPhone === cleanUserPhone
+    );
+    const emailMatches = Boolean(
+      coupon.assignedEmail &&
+        userEmail &&
+        coupon.assignedEmail.toLowerCase() === userEmail.toLowerCase()
+    );
+
+    if (!phoneMatches && !emailMatches) {
+      const targetLabel = coupon.assignedPhone || coupon.assignedEmail || 'another customer';
       return res.status(403).json({
         success: false,
-        message: `This coupon was exclusively issued to another customer (${coupon.assignedEmail}).`,
+        message: `This coupon was exclusively issued to another customer (${targetLabel}).`,
       });
     }
 

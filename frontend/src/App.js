@@ -16,6 +16,7 @@ import RegisterPage from './pages/RegisterPage';
 import CustomerDashboard from './pages/CustomerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminBookings from './pages/admin/AdminBookings';
+import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminServices from './pages/admin/AdminServices';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminStaff from './pages/admin/AdminStaff';
@@ -78,6 +79,7 @@ const AppRoutes = () => {
       {/* Admin protected */}
       <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/bookings" element={<ProtectedRoute requiredRole={['admin', 'staff']}><AdminBookings /></ProtectedRoute>} />
+      <Route path="/admin/customers" element={<ProtectedRoute requiredRole="admin"><AdminCustomers /></ProtectedRoute>} />
       <Route path="/admin/services" element={<ProtectedRoute requiredRole="admin"><AdminServices /></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute requiredRole="admin"><AdminProducts /></ProtectedRoute>} />
       <Route path="/admin/staff" element={<ProtectedRoute requiredRole="admin"><AdminStaff /></ProtectedRoute>} />
