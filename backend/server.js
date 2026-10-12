@@ -26,6 +26,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const queryRoutes = require('./routes/queryRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // Import error handler middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -91,6 +92,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/queries', queryRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Health-check endpoint
 app.get('/api/health', (_req, res) => {

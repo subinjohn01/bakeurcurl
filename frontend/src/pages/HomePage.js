@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 // ── Inline style helpers ─────────────────────────────────────────────────────
 const S = {
@@ -117,12 +119,44 @@ const HomePage = () => {
   const navigate = useNavigate();
   const heroRef = useRef();
 
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     bookingsCount: 3,
     stylistsCount: 2,
   });
 
+  const [reviewsList, setReviewsList] = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newReview, setNewReview] = useState({
+    name: user?.name || '',
+    curlType: '3B Curls',
+    rating: 5,
+    comment: '',
+    serviceName: '',
+  });
+
   useEffect(() => {
+    if (user?.name && !newReview.name) {
+      setNewReview(prev => ({ ...prev, name: user.name }));
+    }
+  }, [user]);
+
+  // Fetch reviews from server
+  const fetchReviews = async () => {
+    try {
+      const res = await axiosInstance.get('/reviews');
+      if (res.data?.reviews) {
+        setReviewsList(res.data.reviews);
+      }
+    } catch (e) {
+      // Keep static testimonials if server review list empty
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
     // Fetch public stats for real-time dynamic counter
     axiosInstance.get('/bookings/public-stats').then(res => {
       if (res.data) {
@@ -141,6 +175,32 @@ const HomePage = () => {
       }).catch(() => {});
     });
   }, []);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!newReview.name.trim() || !newReview.comment.trim()) {
+      toast.error('Please enter your name and a brief review.');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await axiosInstance.post('/reviews', newReview);
+      toast.success('Thank you! Your rating and review have been submitted! ⭐');
+      setShowReviewModal(false);
+      setNewReview({
+        name: user?.name || '',
+        curlType: '3B Curls',
+        rating: 5,
+        comment: '',
+        serviceName: '',
+      });
+      fetchReviews();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   useEffect(() => {
     const el = heroRef.current;
@@ -462,33 +522,96 @@ const HomePage = () => {
       {/* ── TESTIMONIALS ── */}
       <section style={{ padding: '100px 24px', background: 'rgba(168,122,81,0.04)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, color: '#fff', marginBottom: 16 }}>
               What Our Clients Say
             </h2>
-            <p style={{ color: 'rgba(251,246,238,0.5)', fontSize: 16 }}>Real stories from our curl community</p>
+            <p style={{ color: 'rgba(251,246,238,0.5)', fontSize: 16, marginBottom: 24 }}>Real stories & reviews from our curl community</p>
+            <button
+              onClick={() => setShowReviewModal(true)}
+              style={{
+                padding: '12px 28px',
+                background: 'linear-gradient(135deg, #A87A51, #754B2E)',
+                border: '1px solid rgba(232,180,160,0.4)',
+                borderRadius: 30,
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(168,122,81,0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(168,122,81,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(168,122,81,0.3)'; }}
+            >
+              <span>⭐</span> Write a Review & Rate Us
+            </button>
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-            {testimonials.map((t, i) => (
+            {[
+              ...reviewsList.map(r => ({
+                id: r._id,
+                name: r.name,
+                type: r.curlType || 'Curly Hair',
+                quote: r.comment,
+                rating: r.rating || 5,
+                avatar: '✨',
+                service: r.serviceName,
+              })),
+              ...testimonials.map((t, idx) => ({
+                id: `static-${idx}`,
+                name: t.name,
+                type: t.type,
+                quote: t.quote,
+                rating: 5,
+                avatar: t.avatar,
+                service: '',
+              }))
+            ].slice(0, 6).map((t) => (
               <div
-                key={i}
+                key={t.id}
                 style={{
                   ...S.glass(),
                   padding: 32,
                   position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
                 }}
               >
-                <div style={{ fontSize: 40, color: 'rgba(168,122,81,0.5)', fontFamily: 'serif', lineHeight: 1, marginBottom: 16 }}>"</div>
-                <p style={{ color: 'rgba(251,246,238,0.75)', fontSize: 15, lineHeight: 1.75, marginBottom: 24, fontStyle: 'italic' }}>
-                  {t.quote}
-                </p>
+                <div>
+                  <div style={{ fontSize: 40, color: 'rgba(168,122,81,0.5)', fontFamily: 'serif', lineHeight: 1, marginBottom: 12 }}>"</div>
+                  <p style={{ color: 'rgba(251,246,238,0.75)', fontSize: 15, lineHeight: 1.75, marginBottom: 24, fontStyle: 'italic' }}>
+                    {t.quote}
+                  </p>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ fontSize: 36 }}>{t.avatar}</div>
-                  <div>
-                    <p style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>{t.name}</p>
-                    <p style={{ color: '#E8B4A0', fontSize: 13 }}>{t.type}</p>
+                  <div style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(168,122,81,0.35), rgba(117,75,46,0.25))',
+                    border: '1px solid rgba(232,180,160,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                  }}>
+                    {t.avatar || '✨'}
                   </div>
-                  <div style={{ marginLeft: 'auto', fontSize: 14 }}>⭐⭐⭐⭐⭐</div>
+                  <div>
+                    <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>{t.name}</p>
+                    <p style={{ color: '#E8B4A0', fontSize: 13, margin: 0 }}>
+                      {t.type} {t.service ? `· ${t.service}` : ''}
+                    </p>
+                  </div>
+                  <div style={{ marginLeft: 'auto', fontSize: 15, letterSpacing: 1 }}>
+                    {'⭐'.repeat(t.rating || 5)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -539,6 +662,254 @@ const HomePage = () => {
           </button>
         </div>
       </section>
+
+      {/* ── WRITE A REVIEW MODAL ── */}
+      {showReviewModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowReviewModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: '#1A120D',
+              border: '1px solid rgba(168,122,81,0.4)',
+              borderRadius: 20,
+              padding: '32px 28px',
+              maxWidth: 520,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168,122,81,0.2)',
+              position: 'relative',
+              animation: 'fadeIn 0.25s ease-out',
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowReviewModal(false)}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'rgba(255,255,255,0.06)',
+                border: 'none',
+                color: '#fff',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
+              Rate Your Experience ⭐
+            </h3>
+            <p style={{ color: 'rgba(251,246,238,0.6)', fontSize: 14, marginBottom: 20 }}>
+              Share your thoughts with the BakeUrCurls community!
+            </p>
+
+            <form onSubmit={handleReviewSubmit}>
+              {/* Star Rating Select */}
+              <div style={{ marginBottom: 20, textAlign: 'center', background: 'rgba(251,246,238,0.03)', padding: '16px', borderRadius: 12, border: '1px solid rgba(251,246,238,0.08)' }}>
+                <label style={{ display: 'block', color: '#E8B4A0', fontSize: 13, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Tap to Choose Star Rating
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isLit = (hoverRating || newReview.rating) >= star;
+                    return (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setNewReview({ ...newReview, rating: star })}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 32,
+                          color: isLit ? '#F59E0B' : 'rgba(251,246,238,0.2)',
+                          transition: 'transform 0.15s, color 0.15s',
+                          transform: isLit ? 'scale(1.15)' : 'scale(1)',
+                          padding: 2,
+                        }}
+                      >
+                        ★
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ color: '#F59E0B', fontSize: 13, fontWeight: 600, marginTop: 6 }}>
+                  {newReview.rating === 5 && '5 Stars — Exceptional! Loved it ❤️'}
+                  {newReview.rating === 4 && '4 Stars — Very Good Experience! 👍'}
+                  {newReview.rating === 3 && '3 Stars — Average / Satisfactory 🙂'}
+                  {newReview.rating === 2 && '2 Stars — Needs Improvement 😐'}
+                  {newReview.rating === 1 && '1 Star — Disappointed 🙁'}
+                </div>
+              </div>
+
+              {/* Name */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                  Your Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Jessica Davis"
+                  value={newReview.name}
+                  onChange={e => setNewReview({ ...newReview, name: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'rgba(251,246,238,0.06)',
+                    border: '1px solid rgba(251,246,238,0.15)',
+                    color: '#fff',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              {/* Curl Type & Service */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Curl Pattern / Type
+                  </label>
+                  <select
+                    value={newReview.curlType}
+                    onChange={e => setNewReview({ ...newReview, curlType: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: '#231812',
+                      border: '1px solid rgba(251,246,238,0.15)',
+                      color: '#fff',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <option value="2A-2C Waves">2A–2C Waves</option>
+                    <option value="3A-3B Curls">3A–3B Curls</option>
+                    <option value="3C Curls">3C Curls</option>
+                    <option value="4A-4B Coils">4A–4B Coils</option>
+                    <option value="4C Coils">4C Coils</option>
+                    <option value="Wavy Hair">Wavy Hair</option>
+                    <option value="Curly Hair">Curly Hair</option>
+                    <option value="Coily Hair">Coily Hair</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Service (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Curl Definition Cut"
+                    value={newReview.serviceName}
+                    onChange={e => setNewReview({ ...newReview, serviceName: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(251,246,238,0.06)',
+                      border: '1px solid rgba(251,246,238,0.15)',
+                      color: '#fff',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Review Comment */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                  Your Review / Experience *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Tell us how your stylist treated your curls and how the results looked..."
+                  value={newReview.comment}
+                  onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: 8,
+                    background: 'rgba(251,246,238,0.06)',
+                    border: '1px solid rgba(251,246,238,0.15)',
+                    color: '#fff',
+                    fontSize: 14,
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(251,246,238,0.2)',
+                    background: 'transparent',
+                    color: '#fff',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #A87A51, #754B2E)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: submittingReview ? 'not-allowed' : 'pointer',
+                    opacity: submittingReview ? 0.7 : 1,
+                  }}
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit Rating & Review ⭐'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

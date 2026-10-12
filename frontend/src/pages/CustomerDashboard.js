@@ -32,6 +32,11 @@ const S = {
     padding: '0.5rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
     borderRadius: '8px', color: '#f87171', cursor: 'pointer', fontSize: '0.875rem',
   },
+  rateBtn: {
+    padding: '0.5rem 1rem', background: 'linear-gradient(135deg, #A87A51, #754B2E)', border: 'none',
+    borderRadius: '8px', color: '#fff', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600',
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+  },
   empty: { textAlign: 'center', color: 'rgba(251,246,238,0.4)', padding: '4rem 0', fontSize: '1.1rem' },
   profileCard: {
     maxWidth: '600px', margin: '0 auto',
@@ -103,6 +108,12 @@ export default function CustomerDashboard() {
     }
   };
 
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [rateForm, setRateForm] = useState({ rating: 5, comment: '', curlType: '3B Curls' });
+  const [submittingRate, setSubmittingRate] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+
   const handleProfileSave = async (e) => {
     e.preventDefault();
     try {
@@ -111,6 +122,40 @@ export default function CustomerDashboard() {
       toast.success('Profile updated!');
     } catch (err) {
       toast.error('Failed to update profile');
+    }
+  };
+
+  const openRatingModal = (booking) => {
+    setSelectedBooking(booking);
+    setRateForm({
+      rating: 5,
+      comment: '',
+      curlType: '3B Curls',
+    });
+    setShowRateModal(true);
+  };
+
+  const handleRatingSubmit = async (e) => {
+    e.preventDefault();
+    if (!rateForm.comment.trim()) {
+      toast.error('Please share a few words about your visit.');
+      return;
+    }
+    setSubmittingRate(true);
+    try {
+      await axiosInstance.post('/reviews', {
+        name: user?.name || 'Happy Customer',
+        curlType: rateForm.curlType,
+        rating: rateForm.rating,
+        comment: rateForm.comment,
+        serviceName: selectedBooking?.service?.name || selectedBooking?.service || '',
+      });
+      toast.success('Thank you for rating your appointment! ⭐');
+      setShowRateModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not submit rating');
+    } finally {
+      setSubmittingRate(false);
     }
   };
 
@@ -157,7 +202,7 @@ export default function CustomerDashboard() {
               <div key={b._id} style={S.card}>
                 <div style={S.info}>
                   <div style={S.bookingId}>{b.bookingId}</div>
-                  <div style={S.service}>{b.servic.name || 'Service'}</div>
+                  <div style={S.service}>{b.service?.name || 'Curl Service'}</div>
                   <div style={S.meta}>
                     📅 {new Date(b.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     &nbsp;·&nbsp; 🕐 {b.timeSlot}
@@ -172,6 +217,11 @@ export default function CustomerDashboard() {
                   {b.status === 'pending' || b.status === 'confirmed' ? (
                     <button style={S.cancelBtn} onClick={() => cancelBooking(b._id)}>Cancel</button>
                   ) : null}
+                  {(b.status === 'completed' || tab === 'history') && (
+                    <button style={S.rateBtn} onClick={() => openRatingModal(b)}>
+                      ⭐ Rate Experience
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -191,6 +241,203 @@ export default function CustomerDashboard() {
               <label style={{ color: 'rgba(251,246,238,0.6)', fontSize: '0.85rem' }}>Email (cannot change)</label>
               <input style={{ ...S.input, opacity: 0.5 }} value={user?.email || ''} disabled />
               <button type="submit" style={S.saveBtn}>Save Changes</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── APPOINTMENT RATING MODAL ── */}
+      {showRateModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowRateModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: '#1A120D',
+              border: '1px solid rgba(168,122,81,0.4)',
+              borderRadius: 20,
+              padding: '32px 28px',
+              maxWidth: 500,
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168,122,81,0.2)',
+              position: 'relative',
+            }}
+          >
+            <button
+              onClick={() => setShowRateModal(false)}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'rgba(255,255,255,0.06)',
+                border: 'none',
+                color: '#fff',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+              Rate Your Appointment ⭐
+            </h3>
+            <p style={{ color: '#E8B4A0', fontSize: 13, marginBottom: 20 }}>
+              {selectedBooking?.service?.name || 'Curl Service'} · {selectedBooking?.bookingId}
+            </p>
+
+            <form onSubmit={handleRatingSubmit}>
+              {/* Star Rating Select */}
+              <div style={{ marginBottom: 20, textAlign: 'center', background: 'rgba(251,246,238,0.03)', padding: '16px', borderRadius: 12, border: '1px solid rgba(251,246,238,0.08)' }}>
+                <label style={{ display: 'block', color: '#E8B4A0', fontSize: 13, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Tap to Choose Star Rating
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isLit = (hoverRating || rateForm.rating) >= star;
+                    return (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRateForm({ ...rateForm, rating: star })}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 32,
+                          color: isLit ? '#F59E0B' : 'rgba(251,246,238,0.2)',
+                          transition: 'transform 0.15s, color 0.15s',
+                          transform: isLit ? 'scale(1.15)' : 'scale(1)',
+                          padding: 2,
+                        }}
+                      >
+                        ★
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ color: '#F59E0B', fontSize: 13, fontWeight: 600, marginTop: 6 }}>
+                  {rateForm.rating === 5 && '5 Stars — Exceptional! Loved it ❤️'}
+                  {rateForm.rating === 4 && '4 Stars — Very Good Experience! 👍'}
+                  {rateForm.rating === 3 && '3 Stars — Average / Satisfactory 🙂'}
+                  {rateForm.rating === 2 && '2 Stars — Needs Improvement 😐'}
+                  {rateForm.rating === 1 && '1 Star — Disappointed 🙁'}
+                </div>
+              </div>
+
+              {/* Curl Type */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                  Curl Pattern / Type
+                </label>
+                <select
+                  value={rateForm.curlType}
+                  onChange={e => setRateForm({ ...rateForm, curlType: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: '#231812',
+                    border: '1px solid rgba(251,246,238,0.15)',
+                    color: '#fff',
+                    fontSize: 13,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="2A-2C Waves">2A–2C Waves</option>
+                  <option value="3A-3B Curls">3A–3B Curls</option>
+                  <option value="3C Curls">3C Curls</option>
+                  <option value="4A-4B Coils">4A–4B Coils</option>
+                  <option value="4C Coils">4C Coils</option>
+                  <option value="Wavy Hair">Wavy Hair</option>
+                  <option value="Curly Hair">Curly Hair</option>
+                  <option value="Coily Hair">Coily Hair</option>
+                </select>
+              </div>
+
+              {/* Review Comment */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', color: 'rgba(251,246,238,0.7)', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                  How was your experience? *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Share feedback on your stylist, haircut, styling, or curl condition..."
+                  value={rateForm.comment}
+                  onChange={e => setRateForm({ ...rateForm, comment: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: 8,
+                    background: 'rgba(251,246,238,0.06)',
+                    border: '1px solid rgba(251,246,238,0.15)',
+                    color: '#fff',
+                    fontSize: 14,
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRateModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(251,246,238,0.2)',
+                    background: 'transparent',
+                    color: '#fff',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRate}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #A87A51, #754B2E)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: submittingRate ? 'not-allowed' : 'pointer',
+                    opacity: submittingRate ? 0.7 : 1,
+                  }}
+                >
+                  {submittingRate ? 'Submitting...' : 'Submit Rating ⭐'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
