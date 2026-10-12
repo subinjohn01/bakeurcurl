@@ -704,6 +704,65 @@ const BookingPage = () => {
               paymentOption={step >= 2 ? paymentOption : null}
               appliedCoupon={appliedCoupon}
             />
+
+            {/* Action Button Below Booking Summary */}
+            {step === 0 && (
+              <button
+                onClick={() => setStep(1)}
+                disabled={!selectedService}
+                style={{
+                  marginTop: 16,
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: 14,
+                  background: selectedService
+                    ? 'linear-gradient(135deg, #A87A51, #754B2E)'
+                    : 'rgba(251,246,238,0.07)',
+                  color: selectedService ? '#fff' : 'rgba(251,246,238,0.3)',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  border: selectedService ? '1px solid rgba(241,213,146,0.5)' : 'none',
+                  cursor: selectedService ? 'pointer' : 'not-allowed',
+                  boxShadow: selectedService ? '0 6px 20px rgba(168,122,81,0.45)' : 'none',
+                  transition: 'all 0.25s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                Continue to Date & Stylist →
+              </button>
+            )}
+
+            {step === 1 && (
+              <button
+                onClick={() => setStep(2)}
+                disabled={!selectedDate || !selectedSlot || !selectedStylist}
+                style={{
+                  marginTop: 16,
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: 14,
+                  background: selectedDate && selectedSlot && selectedStylist
+                    ? 'linear-gradient(135deg, #A87A51, #754B2E)'
+                    : 'rgba(251,246,238,0.07)',
+                  color: selectedDate && selectedSlot && selectedStylist ? '#fff' : 'rgba(251,246,238,0.3)',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  border: selectedDate && selectedSlot && selectedStylist ? '1px solid rgba(241,213,146,0.5)' : 'none',
+                  cursor: selectedDate && selectedSlot && selectedStylist ? 'pointer' : 'not-allowed',
+                  boxShadow: selectedDate && selectedSlot && selectedStylist ? '0 6px 20px rgba(168,122,81,0.45)' : 'none',
+                  transition: 'all 0.25s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                Continue to Details →
+              </button>
+            )}
           </div>
         </div>
       </div>
