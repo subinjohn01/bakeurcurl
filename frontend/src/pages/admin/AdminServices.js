@@ -32,9 +32,7 @@ const S = {
   cancelBtn: { padding: '0.7rem 1.5rem', background: 'rgba(251,246,238,0.06)', border: '1px solid rgba(251,246,238,0.12)', borderRadius: '8px', color: '#fff', cursor: 'pointer' },
 };
 
-const categories = ['Hair', 'Coloring', 'Treatments', 'Skincare', 'Waxing', 'Threading', 'Bridal & Makeup'];
-
-const emptyForm = { name: '', description: '', price: '', duration: '', category: 'Hair', image: '', isActive: true };
+const initialCategories = ['Hair', 'Coloring', 'Treatments', 'Skincare', 'Waxing', 'Threading', 'Bridal & Makeup'];
 
 const catEmoji = {
   'Hair': '✂️',
@@ -52,9 +50,22 @@ const catEmoji = {
 
 export default function AdminServices() {
   const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('buc_custom_categories');
+      return saved ? JSON.parse(saved) : initialCategories;
+    } catch {
+      return initialCategories;
+    }
+  });
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [newCatInput, setNewCatInput] = useState('');
+  const [isAddingCustomCat, setIsAddingCustomCat] = useState(false);
+  const [customCatInput, setCustomCatInput] = useState('');
+
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({ name: '', description: '', price: '', duration: '', category: 'Hair', image: '', isActive: true });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { fetchServices(); }, []);
@@ -70,22 +81,93 @@ export default function AdminServices() {
         ? res.data
         : [];
       setServices(list);
+
+      // Merge any new categories found in backend with active categories list
+      const fromServices = Array.from(new Set(list.map((s) => s.category).filter(Boolean)));
+      setCategories((prev) => {
+        const merged = Array.from(new Set([...prev, ...fromServices]));
+        localStorage.setItem('buc_custom_categories', JSON.stringify(merged));
+        return merged;
+      });
     } catch { toast.error('Failed to load services'); }
   };
 
-  const openAdd = () => { setForm(emptyForm); setEditing(null); setShowModal(true); };
-  const openEdit = (s) => { setForm({ name: s.name, description: s.description, price: s.price, duration: s.duration, category: s.category, image: s.image || '', isActive: s.isActive !== false }); setEditing(s._id); setShowModal(true); };
+  const handleAddCategory = (e) => {
+    e.preventDefault();
+    const trimmed = newCatInput.trim();
+    if (!trimmed) return toast.error('Please enter a category name');
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      return toast.error('Category already exists');
+    }
+    const updated = [...categories, trimmed];
+    setCategories(updated);
+    localStorage.setItem('buc_custom_categories', JSON.stringify(updated));
+    setNewCatInput('');
+    toast.success(`Category "${trimmed}" added! ✨`);
+  };
+
+  const handleDeleteCategory = (catToDelete) => {
+    if (categories.length <= 1) return toast.error('At least one category must remain');
+    const inUse = services.filter((s) => s.category?.toLowerCase() === catToDelete.toLowerCase()).length;
+    if (inUse > 0) {
+      if (!window.confirm(`Category "${catToDelete}" is currently used by ${inUse} service(s). Remove anyway?`)) {
+        return;
+      }
+    }
+    const updated = categories.filter((c) => c !== catToDelete);
+    setCategories(updated);
+    localStorage.setItem('buc_custom_categories', JSON.stringify(updated));
+    toast.success(`Category "${catToDelete}" removed`);
+  };
+
+  const openAdd = () => {
+    setForm({ name: '', description: '', price: '', duration: '', category: categories[0] || 'Hair', image: '', isActive: true });
+    setIsAddingCustomCat(false);
+    setCustomCatInput('');
+    setEditing(null);
+    setShowModal(true);
+  };
+
+  const openEdit = (s) => {
+    setForm({
+      name: s.name,
+      description: s.description,
+      price: s.price,
+      duration: s.duration,
+      category: s.category || categories[0] || 'Hair',
+      image: s.image || '',
+      isActive: s.isActive !== false,
+    });
+    setIsAddingCustomCat(false);
+    setCustomCatInput('');
+    setEditing(s._id);
+    setShowModal(true);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name || !form.price || !form.duration) return toast.error('Name, price & duration required');
+
+    let finalCategory = form.category;
+    if (isAddingCustomCat) {
+      const customTrimmed = customCatInput.trim();
+      if (!customTrimmed) return toast.error('Please enter a custom category name or select existing');
+      finalCategory = customTrimmed;
+      if (!categories.includes(customTrimmed)) {
+        const updated = [...categories, customTrimmed];
+        setCategories(updated);
+        localStorage.setItem('buc_custom_categories', JSON.stringify(updated));
+      }
+    }
+
     setLoading(true);
     try {
+      const payload = { ...form, category: finalCategory };
       if (editing) {
-        await axiosInstance.put(`/services/${editing}`, form);
+        await axiosInstance.put(`/services/${editing}`, payload);
         toast.success('Service updated!');
       } else {
-        await axiosInstance.post('/services', form);
+        await axiosInstance.post('/services', payload);
         toast.success('Service added!');
       }
       setShowModal(false);
@@ -116,10 +198,30 @@ export default function AdminServices() {
           <div>
             <h1 style={S.h1}>Services Management</h1>
             <p style={{ color: 'rgba(251,246,238,0.5)', fontSize: '0.85rem', marginTop: 4 }}>
-              Add, update, or remove salon services. All active changes appear live on the website.
+              Configure salon services and categories. All updates reflect live across the site.
             </p>
           </div>
-          <button style={S.addBtn} onClick={openAdd}>+ Add Service</button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => setShowCatModal(true)}
+              style={{
+                padding: '0.7rem 1.2rem',
+                borderRadius: '8px',
+                background: 'rgba(251,246,238,0.06)',
+                border: '1px solid rgba(241,213,146,0.3)',
+                color: '#F1D592',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              🏷️ Manage Categories ({categories.length})
+            </button>
+            <button style={S.addBtn} onClick={openAdd}>+ Add Service</button>
+          </div>
         </div>
 
         <div style={S.grid}>
@@ -157,6 +259,7 @@ export default function AdminServices() {
         </div>
       </div>
 
+      {/* Service Add/Edit Modal */}
       {showModal && (
         <div style={S.overlay} onClick={() => setShowModal(false)}>
           <div style={S.modal} onClick={e => e.stopPropagation()}>
@@ -176,12 +279,49 @@ export default function AdminServices() {
                   <input style={S.minput} name="duration" type="number" value={form.duration} onChange={handleChange} placeholder="60" required />
                 </div>
               </div>
-              <label style={S.label}>Category</label>
-              <select style={S.mselect} name="category" value={form.category} onChange={handleChange}>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+
+              {/* Configurable Category Selection */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ ...S.label, marginBottom: 0 }}>Category *</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingCustomCat(!isAddingCustomCat)}
+                    style={{ fontSize: '0.75rem', color: '#F1D592', textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    {isAddingCustomCat ? '← Select from list' : '+ Type new category'}
+                  </button>
+                </div>
+
+                {!isAddingCustomCat ? (
+                  <select
+                    style={{
+                      ...S.mselect,
+                      marginBottom: 0,
+                      backgroundColor: '#231812',
+                      color: '#FBF6EE',
+                    }}
+                    name="category"
+                    value={form.category}
+                    onChange={handleChange}
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c} style={{ background: '#231812', color: '#FBF6EE' }}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    style={{ ...S.minput, marginBottom: 0 }}
+                    value={customCatInput}
+                    onChange={(e) => setCustomCatInput(e.target.value)}
+                    placeholder="Enter new category name (e.g. Scalp Spa, Highlights)"
+                    autoFocus
+                  />
+                )}
+              </div>
+
               <label style={S.label}>Image URL (optional)</label>
               <input style={S.minput} name="image" value={form.image} onChange={handleChange} placeholder="https://..." />
               <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -195,6 +335,77 @@ export default function AdminServices() {
                 <button type="button" style={S.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Manager Modal */}
+      {showCatModal && (
+        <div style={S.overlay} onClick={() => setShowCatModal(false)}>
+          <div style={{ ...S.modal, maxWidth: '440px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ ...S.mh2, marginBottom: 0 }}>🏷️ Manage Categories</h2>
+              <button
+                onClick={() => setShowCatModal(false)}
+                style={{ color: 'rgba(251,246,238,0.5)', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ color: 'rgba(251,246,238,0.6)', fontSize: '0.85rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Add new categories or delete unused ones. Categories organize services on your public website.
+            </p>
+
+            {/* Add Category Input */}
+            <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
+              <input
+                style={{ ...S.minput, marginBottom: 0, flex: 1 }}
+                value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                placeholder="New category name..."
+              />
+              <button type="submit" style={S.saveBtn}>+ Add</button>
+            </form>
+
+            {/* Category List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+              {categories.map((cat) => {
+                const count = services.filter((s) => s.category?.toLowerCase() === cat.toLowerCase()).length;
+                return (
+                  <div
+                    key={cat}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      background: 'rgba(251,246,238,0.05)',
+                      border: '1px solid rgba(251,246,238,0.1)',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 600, color: '#F1D592', fontSize: '0.9rem' }}>{cat}</span>
+                      <span style={{ color: 'rgba(251,246,238,0.4)', fontSize: '0.75rem', marginLeft: 8 }}>
+                        ({count} {count === 1 ? 'service' : 'services'})
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat)}
+                      style={{ color: '#F87171', fontSize: '0.85rem', cursor: 'pointer', padding: '4px 8px', borderRadius: 4 }}
+                      title="Remove category"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
+              <button style={S.cancelBtn} onClick={() => setShowCatModal(false)}>Done</button>
+            </div>
           </div>
         </div>
       )}

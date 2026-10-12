@@ -51,6 +51,12 @@ input, textarea, select {
   background: transparent;
 }
 
+select option {
+  background-color: #231812 !important;
+  color: #FBF6EE !important;
+  padding: 8px 12px;
+}
+
 button {
   font-family: inherit;
   cursor: pointer;
