@@ -118,8 +118,8 @@ const HomePage = () => {
   const heroRef = useRef();
 
   const [stats, setStats] = useState({
-    bookingsCount: 0,
-    stylistsCount: 0,
+    bookingsCount: 3,
+    stylistsCount: 2,
   });
 
   useEffect(() => {
@@ -283,8 +283,8 @@ const HomePage = () => {
             {/* Stats */}
             <div style={{ display: 'flex', gap: 32, marginTop: 44, flexWrap: 'wrap' }}>
               {[
-                [stats.bookingsCount > 0 ? `${stats.bookingsCount}+` : '50+', 'Happy Clients'],
-                [stats.stylistsCount > 0 ? `${stats.stylistsCount}` : '2', 'Expert Stylists'],
+                [`${stats.bookingsCount || 3}+`, 'Happy Clients'],
+                [`${stats.stylistsCount || 2}`, 'Expert Stylists'],
                 ['100%', 'CG Friendly'],
               ].map(([v, l]) => (
                 <div key={l}>
