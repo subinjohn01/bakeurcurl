@@ -74,6 +74,7 @@ export default function AdminBookings() {
   const [filtered, setFiltered] = useState([]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [phoneSearch, setPhoneSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -81,12 +82,24 @@ export default function AdminBookings() {
   useEffect(() => {
     let f = bookings;
     if (filter !== 'all') f = f.filter(b => b.status === filter);
-    if (search) f = f.filter(b =>
-      (b.bookingId || '').toLowerCase().includes(search.toLowerCase()) ||
-      (b.customer?.name || b.guestInfo?.name || '').toLowerCase().includes(search.toLowerCase())
-    );
+    if (search) {
+      const q = search.toLowerCase();
+      f = f.filter(b =>
+        (b.bookingId || '').toLowerCase().includes(q) ||
+        (b.customer?.name || b.guestInfo?.name || '').toLowerCase().includes(q) ||
+        (b.customer?.email || b.guestInfo?.email || '').toLowerCase().includes(q) ||
+        (b.customer?.phone || b.guestInfo?.phone || '').includes(q)
+      );
+    }
+    if (phoneSearch) {
+      const digits = phoneSearch.replace(/\D/g, '');
+      f = f.filter(b => {
+        const phone = (b.customer?.phone || b.guestInfo?.phone || '').replace(/\D/g, '');
+        return phone.includes(digits);
+      });
+    }
     setFiltered(f);
-  }, [bookings, filter, search]);
+  }, [bookings, filter, search, phoneSearch]);
 
   const fetchBookings = async () => {
     try {
@@ -180,7 +193,19 @@ export default function AdminBookings() {
         </div>
 
         <div style={S.toolbar}>
-          <input style={S.input} placeholder="🔍 Search by ID or name..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input
+            style={{ ...S.input, minWidth: '220px' }}
+            placeholder="🔍 Search by ID or name..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <input
+            style={{ ...S.input, minWidth: '210px' }}
+            type="tel"
+            placeholder="📱 Filter by mobile number..."
+            value={phoneSearch}
+            onChange={e => setPhoneSearch(e.target.value)}
+          />
           <select style={S.select} value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -188,6 +213,22 @@ export default function AdminBookings() {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          {(search || phoneSearch || filter !== 'all') && (
+            <button
+              onClick={() => { setSearch(''); setPhoneSearch(''); setFilter('all'); }}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(251,246,238,0.15)',
+                color: 'rgba(251,246,238,0.6)',
+                borderRadius: '8px',
+                padding: '0.6rem 0.85rem',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+              }}
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
 
         <div style={S.tableWrap}>

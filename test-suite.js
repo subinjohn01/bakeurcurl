@@ -222,6 +222,7 @@ async function runTestSuite() {
   console.log(`\n${colors.bold}4. Loyalty Coupon & Customer Contact Verification:${colors.reset}`);
   const adminBookingsCode = fs.readFileSync(path.join(frontendSrc, 'pages', 'admin', 'AdminBookings.js'), 'utf8');
   assert(adminBookingsCode.includes('Customer & Contact') && adminBookingsCode.includes('wa.me'), 'AdminBookings shows customer contact details and WhatsApp quick-connect');
+  assert(adminBookingsCode.includes('phoneSearch') && adminBookingsCode.includes('Filter by mobile number'), 'AdminBookings includes dedicated mobile number search filter');
 
   const adminLoyaltyPath = path.join(frontendSrc, 'pages', 'admin', 'AdminLoyalty.js');
   assert(fs.existsSync(adminLoyaltyPath), 'AdminLoyalty.js page component exists');
