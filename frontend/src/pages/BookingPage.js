@@ -657,17 +657,27 @@ const BookingPage = () => {
                   </button>
                   <button
                     onClick={handleBookingSubmit}
-                    disabled={!customerInfo.name || !customerInfo.email || !paymentOption || loading}
+                    disabled={loading}
                     style={{
                       flex: 1,
-                      padding: '12px',
-                      background: customerInfo.name && customerInfo.email && paymentOption ? 'linear-gradient(135deg, #A87A51, #754B2E)' : 'rgba(251,246,238,0.07)',
-                      border: 'none',
+                      padding: '14px',
+                      background: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption
+                        ? 'linear-gradient(135deg, #A87A51, #754B2E)'
+                        : 'rgba(251,246,238,0.12)',
+                      border: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption
+                        ? '1px solid rgba(241,213,146,0.4)'
+                        : '1px solid rgba(251,246,238,0.15)',
                       borderRadius: 12,
-                      color: customerInfo.name && customerInfo.email && paymentOption ? '#fff' : 'rgba(251,246,238,0.3)',
+                      color: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption
+                        ? '#fff'
+                        : 'rgba(251,246,238,0.6)',
                       fontWeight: 700,
                       fontSize: 16,
-                      cursor: customerInfo.name && customerInfo.email && paymentOption && !loading ? 'pointer' : 'not-allowed',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      boxShadow: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption
+                        ? '0 4px 15px rgba(168,122,81,0.4)'
+                        : 'none',
+                      transition: 'all 0.2s',
                     }}
                   >
                     {loading ? 'Confirming...' : paymentOption === 'salon' ? 'Confirm Booking ✓' : 'Proceed to Card Payment →'}
@@ -761,6 +771,35 @@ const BookingPage = () => {
                 }}
               >
                 Continue to Details →
+              </button>
+            )}
+
+            {step === 2 && (
+              <button
+                onClick={handleBookingSubmit}
+                disabled={loading}
+                style={{
+                  marginTop: 16,
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: 14,
+                  background: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption
+                    ? 'linear-gradient(135deg, #A87A51, #754B2E)'
+                    : 'rgba(251,246,238,0.12)',
+                  color: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption ? '#fff' : 'rgba(251,246,238,0.6)',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  border: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption ? '1px solid rgba(241,213,146,0.5)' : '1px solid rgba(251,246,238,0.15)',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  boxShadow: customerInfo.name && (customerInfo.phone || customerInfo.email) && paymentOption ? '0 6px 20px rgba(168,122,81,0.45)' : 'none',
+                  transition: 'all 0.25s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                {loading ? 'Confirming...' : paymentOption === 'salon' ? 'Confirm Booking ✓' : 'Proceed to Card Payment →'}
               </button>
             )}
           </div>
